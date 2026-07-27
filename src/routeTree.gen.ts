@@ -14,7 +14,9 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
 import { Route as AppPrioritiesRouteImport } from './routes/app.priorities'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
 import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
 import { Route as AppTasksTaskIdRouteImport } from './routes/app.tasks.$taskId'
@@ -44,9 +46,19 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppPrioritiesRoute = AppPrioritiesRouteImport.update({
   id: '/priorities',
   path: '/priorities',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
   getParentRoute: () => AppRoute,
 } as any)
 const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
@@ -71,7 +83,9 @@ export interface FileRoutesByFullPath {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks/': typeof AppTasksIndexRoute
@@ -81,7 +95,9 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks': typeof AppTasksIndexRoute
@@ -93,7 +109,9 @@ export interface FileRoutesById {
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
   '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks/': typeof AppTasksIndexRoute
@@ -106,7 +124,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/app/analytics'
+    | '/app/notifications'
     | '/app/priorities'
+    | '/app/settings'
     | '/app/'
     | '/app/tasks/$taskId'
     | '/app/tasks/'
@@ -116,7 +136,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/app/analytics'
+    | '/app/notifications'
     | '/app/priorities'
+    | '/app/settings'
     | '/app'
     | '/app/tasks/$taskId'
     | '/app/tasks'
@@ -127,7 +149,9 @@ export interface FileRouteTypes {
     | '/login'
     | '/register'
     | '/app/analytics'
+    | '/app/notifications'
     | '/app/priorities'
+    | '/app/settings'
     | '/app/'
     | '/app/tasks/$taskId'
     | '/app/tasks/'
@@ -177,11 +201,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/priorities': {
       id: '/app/priorities'
       path: '/priorities'
       fullPath: '/app/priorities'
       preLoaderRoute: typeof AppPrioritiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
       parentRoute: typeof AppRoute
     }
     '/app/analytics': {
@@ -210,7 +248,9 @@ declare module '@tanstack/react-router' {
 
 interface AppRouteChildren {
   AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
   AppPrioritiesRoute: typeof AppPrioritiesRoute
+  AppSettingsRoute: typeof AppSettingsRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTasksTaskIdRoute: typeof AppTasksTaskIdRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
@@ -218,7 +258,9 @@ interface AppRouteChildren {
 
 const AppRouteChildren: AppRouteChildren = {
   AppAnalyticsRoute: AppAnalyticsRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
   AppPrioritiesRoute: AppPrioritiesRoute,
+  AppSettingsRoute: AppSettingsRoute,
   AppIndexRoute: AppIndexRoute,
   AppTasksTaskIdRoute: AppTasksTaskIdRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
