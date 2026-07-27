@@ -9,38 +9,204 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as RegisterRouteImport } from './routes/register'
+import { Route as LoginRouteImport } from './routes/login'
+import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppSettingsRouteImport } from './routes/app.settings'
+import { Route as AppPrioritiesRouteImport } from './routes/app.priorities'
+import { Route as AppNotificationsRouteImport } from './routes/app.notifications'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
+import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
+import { Route as AppTasksTaskIdRouteImport } from './routes/app.tasks.$taskId'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RegisterRoute = RegisterRouteImport.update({
+  id: '/register',
+  path: '/register',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AppRoute = AppRouteImport.update({
+  id: '/app',
+  path: '/app',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AppIndexRoute = AppIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsRoute = AppSettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppPrioritiesRoute = AppPrioritiesRouteImport.update({
+  id: '/priorities',
+  path: '/priorities',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppNotificationsRoute = AppNotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
+  id: '/tasks/',
+  path: '/tasks/',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppTasksTaskIdRoute = AppTasksTaskIdRouteImport.update({
+  id: '/tasks/$taskId',
+  path: '/tasks/$taskId',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app': typeof AppIndexRoute
+  '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
+  '/app/tasks': typeof AppTasksIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/app': typeof AppRouteWithChildren
+  '/login': typeof LoginRoute
+  '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/notifications': typeof AppNotificationsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
+  '/app/settings': typeof AppSettingsRoute
+  '/app/': typeof AppIndexRoute
+  '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
+  '/app/tasks/': typeof AppTasksIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/notifications'
+    | '/app/priorities'
+    | '/app/settings'
+    | '/app/'
+    | '/app/tasks/$taskId'
+    | '/app/tasks/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/notifications'
+    | '/app/priorities'
+    | '/app/settings'
+    | '/app'
+    | '/app/tasks/$taskId'
+    | '/app/tasks'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/login'
+    | '/register'
+    | '/sitemap.xml'
+    | '/app/analytics'
+    | '/app/notifications'
+    | '/app/priorities'
+    | '/app/settings'
+    | '/app/'
+    | '/app/tasks/$taskId'
+    | '/app/tasks/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AppRoute: typeof AppRouteWithChildren
+  LoginRoute: typeof LoginRoute
+  RegisterRoute: typeof RegisterRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/register': {
+      id: '/register'
+      path: '/register'
+      fullPath: '/register'
+      preLoaderRoute: typeof RegisterRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/app': {
+      id: '/app'
+      path: '/app'
+      fullPath: '/app'
+      preLoaderRoute: typeof AppRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -48,22 +214,87 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/app/': {
+      id: '/app/'
+      path: '/'
+      fullPath: '/app/'
+      preLoaderRoute: typeof AppIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/settings': {
+      id: '/app/settings'
+      path: '/settings'
+      fullPath: '/app/settings'
+      preLoaderRoute: typeof AppSettingsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/priorities': {
+      id: '/app/priorities'
+      path: '/priorities'
+      fullPath: '/app/priorities'
+      preLoaderRoute: typeof AppPrioritiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/notifications': {
+      id: '/app/notifications'
+      path: '/notifications'
+      fullPath: '/app/notifications'
+      preLoaderRoute: typeof AppNotificationsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/': {
+      id: '/app/tasks/'
+      path: '/tasks'
+      fullPath: '/app/tasks/'
+      preLoaderRoute: typeof AppTasksIndexRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/tasks/$taskId': {
+      id: '/app/tasks/$taskId'
+      path: '/tasks/$taskId'
+      fullPath: '/app/tasks/$taskId'
+      preLoaderRoute: typeof AppTasksTaskIdRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
+interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppNotificationsRoute: typeof AppNotificationsRoute
+  AppPrioritiesRoute: typeof AppPrioritiesRoute
+  AppSettingsRoute: typeof AppSettingsRoute
+  AppIndexRoute: typeof AppIndexRoute
+  AppTasksTaskIdRoute: typeof AppTasksTaskIdRoute
+  AppTasksIndexRoute: typeof AppTasksIndexRoute
+}
+
+const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppNotificationsRoute: AppNotificationsRoute,
+  AppPrioritiesRoute: AppPrioritiesRoute,
+  AppSettingsRoute: AppSettingsRoute,
+  AppIndexRoute: AppIndexRoute,
+  AppTasksTaskIdRoute: AppTasksTaskIdRoute,
+  AppTasksIndexRoute: AppTasksIndexRoute,
+}
+
+const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AppRoute: AppRouteWithChildren,
+  LoginRoute: LoginRoute,
+  RegisterRoute: RegisterRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
