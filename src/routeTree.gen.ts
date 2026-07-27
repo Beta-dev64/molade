@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as RegisterRouteImport } from './routes/register'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
@@ -21,6 +22,11 @@ import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
 import { Route as AppTasksTaskIdRouteImport } from './routes/app.tasks.$taskId'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RegisterRoute = RegisterRouteImport.update({
   id: '/register',
   path: '/register',
@@ -82,6 +88,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/app/analytics': typeof AppAnalyticsRoute
   '/app/notifications': typeof AppNotificationsRoute
   '/app/priorities': typeof AppPrioritiesRoute
@@ -123,6 +132,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/sitemap.xml'
     | '/app/analytics'
     | '/app/notifications'
     | '/app/priorities'
@@ -135,6 +145,7 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/sitemap.xml'
     | '/app/analytics'
     | '/app/notifications'
     | '/app/priorities'
@@ -148,6 +159,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/sitemap.xml'
     | '/app/analytics'
     | '/app/notifications'
     | '/app/priorities'
@@ -162,10 +174,18 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   LoginRoute: typeof LoginRoute
   RegisterRoute: typeof RegisterRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/register': {
       id: '/register'
       path: '/register'
@@ -273,6 +293,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   LoginRoute: LoginRoute,
   RegisterRoute: RegisterRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
