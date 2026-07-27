@@ -154,23 +154,38 @@ export function AppShell() {
       </div>
 
       {/* Bottom nav — mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border/70 bg-background/90 backdrop-blur-xl lg:hidden">
-        {NAV.slice(0, 5).map((item) => {
-          const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
-          return (
-            <Link
-              key={item.to}
-              to={item.to}
-              className={cn(
-                "flex flex-col items-center gap-1 py-2.5 text-[10px]",
-                active ? "text-teal" : "text-muted-foreground",
-              )}
-            >
-              <item.icon className="size-4" />
-              {item.label}
-            </Link>
-          );
-        })}
+      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+        <div className="mx-auto grid max-w-md grid-cols-5 rounded-2xl border border-border/70 bg-background/80 p-1.5 shadow-[0_18px_40px_-18px_oklch(0_0_0/0.8)] backdrop-blur-2xl">
+          {NAV.slice(0, 5).map((item) => {
+            const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
+            return (
+              <Link
+                key={item.to}
+                to={item.to}
+                aria-label={item.label}
+                className={cn(
+                  "relative flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-colors",
+                  active ? "text-teal" : "text-muted-foreground",
+                )}
+              >
+                {active && (
+                  <motion.span
+                    layoutId="molade-tab"
+                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
+                    className="absolute inset-0 rounded-xl bg-teal/12 ring-1 ring-teal/25"
+                  />
+                )}
+                <span className="relative">
+                  <item.icon className="size-[18px]" />
+                  {item.label === "Notifications" && unread > 0 && (
+                    <span className="absolute -top-1 -right-1.5 size-1.5 rounded-full bg-amber" />
+                  )}
+                </span>
+                <span className="relative truncate">{item.label}</span>
+              </Link>
+            );
+          })}
+        </div>
       </nav>
 
       <TaskFormDialog

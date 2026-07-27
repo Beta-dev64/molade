@@ -58,9 +58,20 @@ function Landing() {
           }}
         />
         <div className="mx-auto flex min-h-[86vh] max-w-6xl flex-col justify-center px-5 py-24">
-          <p className="rise font-display text-[clamp(2.5rem,9vw,5rem)] leading-none tracking-tight">
-            Molade
-          </p>
+          <div className="rise flex items-center gap-4">
+            <span className="grid size-14 shrink-0 place-items-center rounded-2xl border border-teal/40 bg-teal/12 shadow-[0_0_60px_-12px_var(--color-teal)]">
+              <span className="font-display text-2xl text-teal">M</span>
+            </span>
+            <div className="min-w-0">
+              <p className="font-display text-[clamp(2.5rem,9vw,5rem)] leading-none tracking-tight">
+                Molade
+              </p>
+              <p className="mt-1 text-[11px] tracking-[0.34em] text-teal uppercase">
+                Know what matters next
+              </p>
+            </div>
+          </div>
+
           <h1
             className="rise mt-6 max-w-3xl text-[clamp(2.25rem,6vw,4.25rem)] leading-[1.02]"
             style={{ animationDelay: "0.1s" }}

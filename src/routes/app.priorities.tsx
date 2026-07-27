@@ -53,17 +53,19 @@ function Priorities() {
           body="Add a task with a deadline and it will appear here, scored against everything else."
         />
       ) : (
-        <ul className="mt-10 space-y-3">
+        <ul className="mt-10">
           {open.map((r, i) => {
             const isOpen = openId === r.task.id;
+            const top = [...r.reasons].sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))[0];
+            const share = Math.max(6, Math.round((r.score / (open[0]?.score || r.score || 1)) * 100));
             return (
               <motion.li
                 key={r.task.id}
                 layout
                 transition={{ layout: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } }}
                 className={cn(
-                  "rounded-2xl border p-5 transition-colors",
-                  i === 0 ? "border-teal/40 bg-teal/6" : "border-border bg-surface/40",
+                  "border-b border-border/60 py-6 transition-colors",
+                  i === 0 && "rounded-2xl border-b-0 border border-teal/35 bg-teal/6 p-6",
                 )}
               >
                 <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4">
@@ -82,28 +84,54 @@ function Priorities() {
                       <span className="font-mono text-[10px] text-muted-foreground">{r.task.courseCode}</span>
                       <DeadlineCountdown deadline={r.task.deadline} now={now} />
                     </div>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {r.reasons.slice(0, 4).map((reason) => (
-                        <ReasonChip key={reason.label} reason={reason} />
-                      ))}
+
+                    {top && (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Ranked here mainly because{" "}
+                        <span className="text-foreground">{top.label.toLowerCase()}</span>
+                        {top.detail ? ` — ${top.detail.toLowerCase()}` : ""}.
+                      </p>
+                    )}
+
+                    <div className="mt-3 h-1 w-full overflow-hidden rounded-full bg-border/70">
+                      <motion.div
+                        layout
+                        initial={{ width: 0 }}
+                        animate={{ width: `${share}%` }}
+                        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+                        className={cn("h-full rounded-full", i === 0 ? "bg-teal" : "bg-teal/45")}
+                      />
                     </div>
+
+                    <button
+                      onClick={() => setOpenId(isOpen ? null : r.task.id)}
+                      aria-expanded={isOpen}
+                      className="mt-3 inline-flex items-center gap-1.5 text-xs font-semibold text-teal hover:underline"
+                    >
+                      {isOpen ? "Hide the reasoning" : "Why this ranking?"}
+                      <ChevronDown className={cn("size-3.5 transition-transform", isOpen && "rotate-180")} />
+                    </button>
+
+                    <AnimatePresence initial={false}>
+                      {isOpen && (
+                        <div>
+                          <div className="mt-3 flex flex-wrap gap-2">
+                            {r.reasons.map((reason) => (
+                              <ReasonChip key={reason.label} reason={reason} />
+                            ))}
+                          </div>
+                          <ExplanationPanel ranked={r} />
+                        </div>
+                      )}
+                    </AnimatePresence>
                   </div>
                   <PriorityBadge level={r.level} score={r.score} />
                 </div>
-
-                <button
-                  onClick={() => setOpenId(isOpen ? null : r.task.id)}
-                  aria-expanded={isOpen}
-                  className="mt-4 inline-flex items-center gap-1.5 text-xs font-semibold text-teal hover:underline"
-                >
-                  Why this ranking?
-                  <ChevronDown className={cn("size-3.5 transition-transform", isOpen && "rotate-180")} />
-                </button>
-                <AnimatePresence initial={false}>{isOpen && <ExplanationPanel ranked={r} />}</AnimatePresence>
               </motion.li>
             );
           })}
         </ul>
+
       )}
 
       <p className="mt-10 rounded-xl border border-border bg-surface/40 p-5 text-xs leading-relaxed text-muted-foreground">
