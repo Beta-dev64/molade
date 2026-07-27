@@ -14,6 +14,8 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppPrioritiesRouteImport } from './routes/app.priorities'
+import { Route as AppAnalyticsRouteImport } from './routes/app.analytics'
 import { Route as AppTasksIndexRouteImport } from './routes/app.tasks.index'
 import { Route as AppTasksTaskIdRouteImport } from './routes/app.tasks.$taskId'
 
@@ -42,6 +44,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppPrioritiesRoute = AppPrioritiesRouteImport.update({
+  id: '/priorities',
+  path: '/priorities',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAnalyticsRoute = AppAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppTasksIndexRoute = AppTasksIndexRouteImport.update({
   id: '/tasks/',
   path: '/tasks/',
@@ -58,6 +70,8 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks/': typeof AppTasksIndexRoute
@@ -66,6 +80,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
   '/app': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks': typeof AppTasksIndexRoute
@@ -76,6 +92,8 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/login': typeof LoginRoute
   '/register': typeof RegisterRoute
+  '/app/analytics': typeof AppAnalyticsRoute
+  '/app/priorities': typeof AppPrioritiesRoute
   '/app/': typeof AppIndexRoute
   '/app/tasks/$taskId': typeof AppTasksTaskIdRoute
   '/app/tasks/': typeof AppTasksIndexRoute
@@ -87,6 +105,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/analytics'
+    | '/app/priorities'
     | '/app/'
     | '/app/tasks/$taskId'
     | '/app/tasks/'
@@ -95,6 +115,8 @@ export interface FileRouteTypes {
     | '/'
     | '/login'
     | '/register'
+    | '/app/analytics'
+    | '/app/priorities'
     | '/app'
     | '/app/tasks/$taskId'
     | '/app/tasks'
@@ -104,6 +126,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/login'
     | '/register'
+    | '/app/analytics'
+    | '/app/priorities'
     | '/app/'
     | '/app/tasks/$taskId'
     | '/app/tasks/'
@@ -153,6 +177,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/priorities': {
+      id: '/app/priorities'
+      path: '/priorities'
+      fullPath: '/app/priorities'
+      preLoaderRoute: typeof AppPrioritiesRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/analytics': {
+      id: '/app/analytics'
+      path: '/analytics'
+      fullPath: '/app/analytics'
+      preLoaderRoute: typeof AppAnalyticsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/tasks/': {
       id: '/app/tasks/'
       path: '/tasks'
@@ -171,12 +209,16 @@ declare module '@tanstack/react-router' {
 }
 
 interface AppRouteChildren {
+  AppAnalyticsRoute: typeof AppAnalyticsRoute
+  AppPrioritiesRoute: typeof AppPrioritiesRoute
   AppIndexRoute: typeof AppIndexRoute
   AppTasksTaskIdRoute: typeof AppTasksTaskIdRoute
   AppTasksIndexRoute: typeof AppTasksIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAnalyticsRoute: AppAnalyticsRoute,
+  AppPrioritiesRoute: AppPrioritiesRoute,
   AppIndexRoute: AppIndexRoute,
   AppTasksTaskIdRoute: AppTasksTaskIdRoute,
   AppTasksIndexRoute: AppTasksIndexRoute,
