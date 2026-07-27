@@ -28,7 +28,7 @@ const NAV = [
   { to: "/app/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/app/notifications", label: "Notifications", icon: Bell },
   { to: "/app/settings", label: "Settings", icon: Settings },
-] as const;
+] as const satisfies readonly { to: string; label: string; icon: typeof Bell; exact?: boolean }[];
 
 export function AppShell() {
   const { user, notifications, ranked, addTask } = useMolade();
@@ -156,7 +156,7 @@ export function AppShell() {
       {/* Bottom nav — mobile */}
       <nav className="fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border/70 bg-background/90 backdrop-blur-xl lg:hidden">
         {NAV.slice(0, 5).map((item) => {
-          const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+          const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
           return (
             <Link
               key={item.to}
@@ -192,7 +192,7 @@ function NavItem({
   pathname: string;
   badge?: number;
 }) {
-  const active = item.exact ? pathname === item.to : pathname.startsWith(item.to);
+  const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
   return (
     <Link
       to={item.to}
