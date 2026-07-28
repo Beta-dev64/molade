@@ -215,6 +215,7 @@ function Dashboard() {
           }}
         >
           <Input
+            id="quick-add"
             value={quick}
             onChange={(e) => setQuick(e.target.value)}
             placeholder="Quick add a task — defaults to 3 days out, medium effort"
@@ -225,31 +226,58 @@ function Dashboard() {
           </Button>
         </form>
 
-        <ul className="mt-4">
-          {top5.map((r, i) => (
-            <TaskRow key={r.task.id} ranked={r} now={now} index={i} onToggle={toggleComplete} showRank />
-          ))}
-        </ul>
+        {top5.length > 0 ? (
+          <ul className="mt-4">
+            {top5.map((r, i) => (
+              <TaskRow key={r.task.id} ranked={r} now={now} index={i} onToggle={toggleComplete} showRank />
+            ))}
+          </ul>
+        ) : (
+          <EmptyState
+            compact
+            className="mt-5"
+            icon={<Sparkles className="size-5" />}
+            title="Nothing in the queue"
+            body="Once a task has a deadline, it appears here in scored order — most pressing first."
+            steps={["Use the quick add above for a fast capture.", "Set the real deadline and effort later from Tasks."]}
+          />
+        )}
       </section>
 
       {/* ACTIVITY */}
       <section className="section-block">
         <h2 className="display-2">Recent activity</h2>
-        <ul className="mt-5 space-y-4">
-          {activity.slice(0, 5).map((a) => {
-            const Icon =
-              a.kind === "completed" ? CheckCircle2 : a.kind === "reminder" ? Bell : a.kind === "created" ? Plus : PenLine;
-            return (
-              <li key={a.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 text-sm">
-                <Icon className="size-4 shrink-0 text-teal" />
-                <span className="truncate">{a.text}</span>
-                <span className="text-xs text-muted-foreground">
-                  {new Date(a.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                </span>
-              </li>
-            );
-          })}
-        </ul>
+        {activity.length > 0 ? (
+          <ul className="mt-5 space-y-4">
+            {activity.slice(0, 5).map((a) => {
+              const Icon =
+                a.kind === "completed"
+                  ? CheckCircle2
+                  : a.kind === "reminder"
+                    ? Bell
+                    : a.kind === "created"
+                      ? Plus
+                      : PenLine;
+              return (
+                <li key={a.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 text-sm">
+                  <Icon className="size-4 shrink-0 text-teal" />
+                  <span className="truncate">{a.text}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {new Date(a.at).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+        ) : (
+          <EmptyState
+            compact
+            className="mt-5"
+            icon={<PenLine className="size-5" />}
+            title="No activity yet"
+            body="Completions, edits and reminders land here so you can see the semester take shape."
+          />
+        )}
       </section>
     </div>
   );
