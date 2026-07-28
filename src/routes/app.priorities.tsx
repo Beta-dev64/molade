@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { RefreshCw, ChevronDown, Sparkles } from "lucide-react";
+import { RefreshCw, ChevronDown, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PriorityBadge } from "@/components/molade/priority-badge";
 import { DeadlineCountdown } from "@/components/molade/deadline-countdown";
@@ -33,13 +33,13 @@ function Priorities() {
     <div className="mx-auto max-w-4xl">
       <header className="rise grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div className="min-w-0">
-          <h1 className="text-[clamp(1.9rem,4vw,2.5rem)] leading-tight">Priorities</h1>
+          <h1 className="display-1">Priorities</h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
             Ranked by fixed rules — deadline proximity, workload against time left, status and
             overdue risk. Every position is explainable, and nothing is hidden behind a model.
           </p>
         </div>
-        <Button onClick={recalculate} disabled={recalculating} className="w-full sm:w-auto">
+        <Button onClick={recalculate} disabled={recalculating} className="press w-full sm:w-auto">
           <RefreshCw className={cn("size-4", recalculating && "animate-spin")} />
           Recalculate priorities
         </Button>
@@ -49,8 +49,24 @@ function Priorities() {
         <EmptyState
           className="mt-10"
           icon={<Sparkles className="size-5" />}
-          title="Nothing to rank"
-          body="Add a task with a deadline and it will appear here, scored against everything else."
+          title={ranked.length === 0 ? "Nothing to rank yet" : "Queue is clear"}
+          body={
+            ranked.length === 0
+              ? "Molade needs at least one task with a deadline before it can score anything."
+              : "Every tracked task is complete. When the next one lands it will be scored and slotted in automatically."
+          }
+          steps={[
+            "Add a task with a deadline and an effort estimate.",
+            "Molade scores deadline proximity, workload, status and overdue risk.",
+            "Expand any row to see the exact points behind its position.",
+          ]}
+          action={
+            <Button asChild className="press">
+              <Link to="/app/tasks">
+                Go to Tasks <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <ul className="mt-10">

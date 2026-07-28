@@ -30,6 +30,17 @@ const NAV = [
   { to: "/app/settings", label: "Settings", icon: Settings },
 ] as const satisfies readonly { to: string; label: string; icon: typeof Bell; exact?: boolean }[];
 
+/** Light haptic tick on devices that support it — silently ignored elsewhere. */
+export function tapFeedback(pattern: number | number[] = 8) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* no-op */
+    }
+  }
+}
+
 export function AppShell() {
   const { user, notifications, ranked, addTask } = useMolade();
   const now = useNow();
@@ -64,9 +75,12 @@ export function AppShell() {
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6">
               <div className="flex items-center gap-2 lg:hidden">
                 <button
-                  onClick={() => setOpen((v) => !v)}
+                  onClick={() => {
+                    tapFeedback();
+                    setOpen((v) => !v);
+                  }}
                   aria-label="Toggle navigation"
-                  className="grid size-9 place-items-center rounded-lg border border-border"
+                  className="press grid size-9 place-items-center rounded-lg border border-border"
                 >
                   {open ? <X className="size-4" /> : <Menu className="size-4" />}
                 </button>
@@ -88,7 +102,7 @@ export function AppShell() {
                 <Link
                   to="/app/notifications"
                   aria-label="Notifications"
-                  className="relative grid size-9 place-items-center rounded-lg border border-border transition-colors hover:border-teal/50"
+                  className="press relative grid size-9 place-items-center rounded-lg border border-border transition-colors hover:border-teal/50"
                 >
                   <Bell className="size-4" />
                   {unread > 0 && (
@@ -147,42 +161,59 @@ export function AppShell() {
             )}
           </header>
 
-          <main className="px-4 pt-8 pb-28 sm:px-6 lg:px-10 lg:pb-16">
+          <main className="px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pb-16">
             <Outlet />
           </main>
         </div>
       </div>
 
       {/* Bottom nav — mobile */}
-      <nav className="fixed inset-x-0 bottom-0 z-40 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] lg:hidden">
+      <nav className="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 rounded-2xl border border-border/70 bg-background/80 p-1.5 shadow-[0_18px_40px_-18px_oklch(0_0_0/0.8)] backdrop-blur-2xl">
           {NAV.slice(0, 5).map((item) => {
             const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
             return (
-              <Link
+              <motion.div
                 key={item.to}
-                to={item.to}
-                aria-label={item.label}
-                className={cn(
-                  "relative flex flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-colors",
-                  active ? "text-teal" : "text-muted-foreground",
-                )}
+                whileTap={{ scale: 0.9 }}
+                transition={{ type: "spring", stiffness: 600, damping: 26 }}
               >
-                {active && (
-                  <motion.span
-                    layoutId="molade-tab"
-                    transition={{ type: "spring", stiffness: 420, damping: 34 }}
-                    className="absolute inset-0 rounded-xl bg-teal/12 ring-1 ring-teal/25"
-                  />
-                )}
-                <span className="relative">
-                  <item.icon className="size-[18px]" />
-                  {item.label === "Notifications" && unread > 0 && (
-                    <span className="absolute -top-1 -right-1.5 size-1.5 rounded-full bg-amber" />
+                <Link
+                  to={item.to}
+                  aria-label={item.label}
+                  onClick={() => tapFeedback()}
+                  className={cn(
+                    "relative flex touch-manipulation flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-colors duration-200",
+                    active ? "text-teal" : "text-muted-foreground",
                   )}
-                </span>
-                <span className="relative truncate">{item.label}</span>
-              </Link>
+                  style={{ WebkitTapHighlightColor: "transparent" }}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="molade-tab"
+                      transition={{ type: "spring", stiffness: 480, damping: 38, mass: 0.7 }}
+                      className="absolute inset-0 rounded-xl bg-teal/12 ring-1 ring-teal/25"
+                    />
+                  )}
+                  <motion.span
+                    className="relative"
+                    animate={active ? { y: -1, scale: 1.06 } : { y: 0, scale: 1 }}
+                    transition={{ type: "spring", stiffness: 520, damping: 30 }}
+                  >
+                    <item.icon className="size-[18px]" />
+                    {item.label === "Notifications" && unread > 0 && (
+                      <span className="absolute -top-1 -right-1.5 size-1.5 rounded-full bg-amber" />
+                    )}
+                  </motion.span>
+                  <motion.span
+                    className="relative truncate"
+                    animate={{ opacity: active ? 1 : 0.75 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    {item.label}
+                  </motion.span>
+                </Link>
+              </motion.div>
             );
           })}
         </div>
