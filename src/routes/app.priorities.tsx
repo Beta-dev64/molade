@@ -33,13 +33,13 @@ function Priorities() {
     <div className="mx-auto max-w-4xl">
       <header className="rise grid gap-4 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
         <div className="min-w-0">
-          <h1 className="text-[clamp(1.9rem,4vw,2.5rem)] leading-tight">Priorities</h1>
+          <h1 className="display-1">Priorities</h1>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
             Ranked by fixed rules — deadline proximity, workload against time left, status and
             overdue risk. Every position is explainable, and nothing is hidden behind a model.
           </p>
         </div>
-        <Button onClick={recalculate} disabled={recalculating} className="w-full sm:w-auto">
+        <Button onClick={recalculate} disabled={recalculating} className="press w-full sm:w-auto">
           <RefreshCw className={cn("size-4", recalculating && "animate-spin")} />
           Recalculate priorities
         </Button>

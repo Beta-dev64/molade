@@ -66,7 +66,7 @@ function Dashboard() {
   return (
     <div className="mx-auto max-w-5xl">
       <header className="rise">
-        <h1 className="text-[clamp(1.9rem,4vw,2.75rem)] leading-tight">{greeting}, Adeola.</h1>
+        <h1 className="display-1">{greeting}, Adeola.</h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {overdue > 0 ? `${overdue} task${overdue > 1 ? "s" : ""} overdue · ` : ""}
           {dueThisWeek} due this week · Dissertation work should own your next block.
@@ -76,8 +76,8 @@ function Dashboard() {
       {/* NEXT UP */}
       {nextUp ? (
         <section className="rise mt-10" style={{ animationDelay: "0.08s" }}>
-          <p className="font-mono text-[11px] tracking-[0.25em] text-teal uppercase">Next up</p>
-          <div className="mt-4 rounded-2xl border border-border bg-surface/50 p-5 sm:p-7">
+          <p className="eyebrow text-teal">Next up</p>
+          <div className="card-pad mt-4 rounded-2xl border border-border bg-surface/50">
             <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4">
               <div className="min-w-0">
                 <Link
@@ -92,10 +92,10 @@ function Dashboard() {
               <PriorityBadge level={nextUp.level} score={nextUp.score} />
             </div>
             <div className="mt-6 flex flex-wrap items-center gap-3">
-              <Button size="sm" onClick={() => toggleComplete(nextUp.task.id)}>
+              <Button size="sm" className="press" onClick={() => toggleComplete(nextUp.task.id)}>
                 <CheckCircle2 className="size-4" /> Mark complete
               </Button>
-              <Button size="sm" variant="outline" className="border-border" onClick={() => setShowWhy((v) => !v)}>
+              <Button size="sm" variant="outline" className="press border-border" onClick={() => setShowWhy((v) => !v)}>
                 <Sparkles className="size-4" /> {showWhy ? "Hide reasoning" : "Why this task?"}
               </Button>
               <DeadlineCountdown deadline={nextUp.task.deadline} now={now} className="ml-auto" />
@@ -113,7 +113,7 @@ function Dashboard() {
       )}
 
       {/* PROGRESS */}
-      <section className="mt-14 grid gap-10 border-t border-border/60 pt-10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-14">
+      <section className="section-block grid gap-10 sm:grid-cols-[auto_minmax(0,1fr)] sm:items-center sm:gap-12">
         <ProgressRing value={completion} sub="Complete" />
         <div className="grid gap-8 sm:grid-cols-3">
           <StatMeter label="Due this week" value={String(dueThisWeek)} percent={Math.min(100, dueThisWeek * 20)} hint="Across all modules" />
@@ -123,9 +123,9 @@ function Dashboard() {
       </section>
 
       {/* WORKLOAD HEAT */}
-      <section className="mt-14 border-t border-border/60 pt-10">
+      <section className="section-block">
         <div className="flex flex-wrap items-baseline justify-between gap-2">
-          <h2 className="text-xl">Workload ahead</h2>
+          <h2 className="display-2">Workload ahead</h2>
           <p className="text-xs text-muted-foreground">Estimated hours landing per day · next 14 days</p>
         </div>
         <div className="mt-6 grid grid-cols-7 gap-1.5 sm:grid-cols-14">
@@ -160,9 +160,9 @@ function Dashboard() {
       </section>
 
       {/* QUICK ADD + TOP 5 */}
-      <section className="mt-14 border-t border-border/60 pt-10">
+      <section className="section-block">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
-          <h2 className="text-xl">Top priorities</h2>
+          <h2 className="display-2">Top priorities</h2>
           <Link to="/app/priorities" className="inline-flex items-center gap-1 text-sm text-teal hover:underline">
             Full ranking <ArrowRight className="size-3.5" />
           </Link>
@@ -192,7 +192,7 @@ function Dashboard() {
             placeholder="Quick add a task — defaults to 3 days out, medium effort"
             aria-label="Quick add task"
           />
-          <Button type="submit" size="icon" aria-label="Add task">
+          <Button type="submit" size="icon" className="press" aria-label="Add task">
             <Plus className="size-4" />
           </Button>
         </form>
@@ -205,8 +205,8 @@ function Dashboard() {
       </section>
 
       {/* ACTIVITY */}
-      <section className="mt-14 border-t border-border/60 pt-10">
-        <h2 className="text-xl">Recent activity</h2>
+      <section className="section-block">
+        <h2 className="display-2">Recent activity</h2>
         <ul className="mt-5 space-y-4">
           {activity.slice(0, 5).map((a) => {
             const Icon =

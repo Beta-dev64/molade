@@ -75,9 +75,12 @@ export function AppShell() {
             <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6">
               <div className="flex items-center gap-2 lg:hidden">
                 <button
-                  onClick={() => setOpen((v) => !v)}
+                  onClick={() => {
+                    tapFeedback();
+                    setOpen((v) => !v);
+                  }}
                   aria-label="Toggle navigation"
-                  className="grid size-9 place-items-center rounded-lg border border-border"
+                  className="press grid size-9 place-items-center rounded-lg border border-border"
                 >
                   {open ? <X className="size-4" /> : <Menu className="size-4" />}
                 </button>
@@ -99,7 +102,7 @@ export function AppShell() {
                 <Link
                   to="/app/notifications"
                   aria-label="Notifications"
-                  className="relative grid size-9 place-items-center rounded-lg border border-border transition-colors hover:border-teal/50"
+                  className="press relative grid size-9 place-items-center rounded-lg border border-border transition-colors hover:border-teal/50"
                 >
                   <Bell className="size-4" />
                   {unread > 0 && (
@@ -158,7 +161,7 @@ export function AppShell() {
             )}
           </header>
 
-          <main className="px-4 pt-8 pb-28 sm:px-6 lg:px-10 lg:pb-16">
+          <main className="px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pb-16">
             <Outlet />
           </main>
         </div>
