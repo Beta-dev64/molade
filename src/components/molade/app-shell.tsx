@@ -30,6 +30,17 @@ const NAV = [
   { to: "/app/settings", label: "Settings", icon: Settings },
 ] as const satisfies readonly { to: string; label: string; icon: typeof Bell; exact?: boolean }[];
 
+/** Light haptic tick on devices that support it — silently ignored elsewhere. */
+export function tapFeedback(pattern: number | number[] = 8) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    try {
+      navigator.vibrate(pattern);
+    } catch {
+      /* no-op */
+    }
+  }
+}
+
 export function AppShell() {
   const { user, notifications, ranked, addTask } = useMolade();
   const now = useNow();
