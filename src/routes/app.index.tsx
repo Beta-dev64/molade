@@ -107,8 +107,36 @@ function Dashboard() {
         <EmptyState
           className="mt-10"
           icon={<CheckCircle2 className="size-5" />}
-          title="Everything is done"
-          body="No open tasks left in this semester view. Add the next one when it lands."
+          title={tasks.length === 0 ? "Let's set up your semester" : "Everything is done"}
+          body={
+            tasks.length === 0
+              ? "Molade ranks your coursework the moment it has something to work with — a title and a deadline is enough to start."
+              : "No open tasks left in this view. Nothing is competing for your attention right now."
+          }
+          steps={
+            tasks.length === 0
+              ? [
+                  "Add your first task below — a deadline and rough effort is all it needs.",
+                  "Molade scores it against deadline pressure, workload and status.",
+                  "Open Priorities to see exactly why each task sits where it does.",
+                ]
+              : [
+                  "Add the next assessment as soon as it's released — early beats urgent.",
+                  "Check Analytics to see how your on-time rate is trending.",
+                ]
+          }
+          action={
+            <>
+              <Button size="sm" className="press" onClick={() => document.getElementById("quick-add")?.focus()}>
+                <Plus className="size-4" /> Add a task
+              </Button>
+              <Button asChild size="sm" variant="outline" className="press border-border">
+                <Link to="/app/priorities">
+                  See how ranking works <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            </>
+          }
         />
       )}
 
