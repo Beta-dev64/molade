@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AnimatePresence, motion } from "motion/react";
-import { RefreshCw, ChevronDown, Sparkles } from "lucide-react";
+import { RefreshCw, ChevronDown, Sparkles, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { PriorityBadge } from "@/components/molade/priority-badge";
 import { DeadlineCountdown } from "@/components/molade/deadline-countdown";
@@ -49,8 +49,24 @@ function Priorities() {
         <EmptyState
           className="mt-10"
           icon={<Sparkles className="size-5" />}
-          title="Nothing to rank"
-          body="Add a task with a deadline and it will appear here, scored against everything else."
+          title={ranked.length === 0 ? "Nothing to rank yet" : "Queue is clear"}
+          body={
+            ranked.length === 0
+              ? "Molade needs at least one task with a deadline before it can score anything."
+              : "Every tracked task is complete. When the next one lands it will be scored and slotted in automatically."
+          }
+          steps={[
+            "Add a task with a deadline and an effort estimate.",
+            "Molade scores deadline proximity, workload, status and overdue risk.",
+            "Expand any row to see the exact points behind its position.",
+          ]}
+          action={
+            <Button asChild className="press">
+              <Link to="/app/tasks">
+                Go to Tasks <ArrowRight className="size-3.5" />
+              </Link>
+            </Button>
+          }
         />
       ) : (
         <ul className="mt-10">
