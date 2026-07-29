@@ -16,7 +16,10 @@ export interface Task {
   createdAt: string;
   completedAt?: string;
   completedOnTime?: boolean;
+  /** ISO string — while in the future the task is de-prioritised. */
+  snoozedUntil?: string;
 }
+
 
 export interface PriorityReason {
   label: string;
