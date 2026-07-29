@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Your deadlines, ranked with reasons. A calm academic companion for coursework, exams and projects.",
+          "Molade is an intelligent task manager for university students. It ranks coursework by deadline, workload and status, and explains every recommendation.",
       },
     ],
   }),
