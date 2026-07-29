@@ -1,11 +1,10 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   ListChecks,
   Sparkles,
   BarChart3,
-  Bell,
   Settings,
   Search,
   Plus,
@@ -13,10 +12,12 @@ import {
   Menu,
   X,
 } from "lucide-react";
-import { motion } from "motion/react";
+import { MotionConfig, motion } from "motion/react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TaskFormDialog } from "./task-form";
+import { NotificationsCenter, isNotificationActive } from "./notifications-center";
+import { OnboardingTour } from "./onboarding-tour";
 import { PriorityBadge } from "./priority-badge";
 import { useMolade, useNow } from "@/store/molade-store";
 import { cn } from "@/lib/utils";
@@ -42,20 +43,31 @@ export function tapFeedback(pattern: number | number[] = 8) {
 }
 
 export function AppShell() {
-  const { user, notifications, ranked, addTask } = useMolade();
+  const { user, notifications, ranked, addTask, reducedMotion } = useMolade();
   const now = useNow();
   const [open, setOpen] = useState(false);
   const [creating, setCreating] = useState(false);
   const [query, setQuery] = useState("");
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const unread = notifications.filter((n) => !n.read).length;
+  const unread = notifications.filter((n) => isNotificationActive(n, now) && !n.read).length;
   const nextUp = ranked.find((r) => r.task.status !== "completed");
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
+    <MotionConfig reducedMotion={reducedMotion ? "always" : "user"}>
     <div className="atmosphere grain min-h-screen">
+      <a href="#molade-main" className="skip-link">
+        Skip to main content
+      </a>
       <div className="mx-auto flex w-full max-w-[1600px]">
         {/* Sidebar — desktop */}
-        <aside className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/70 px-4 py-6 lg:flex">
+        <aside aria-label="Primary" className="sticky top-0 hidden h-screen w-64 shrink-0 flex-col border-r border-border/70 px-4 py-6 lg:flex">
           <BrandMark />
           <nav className="mt-8 flex flex-1 flex-col gap-1">
             {NAV.map((item) => (
@@ -79,10 +91,12 @@ export function AppShell() {
                     tapFeedback();
                     setOpen((v) => !v);
                   }}
-                  aria-label="Toggle navigation"
+                  aria-label={open ? "Close navigation menu" : "Open navigation menu"}
+                  aria-expanded={open}
+                  aria-controls="molade-mobile-nav"
                   className="press grid size-9 place-items-center rounded-lg border border-border"
                 >
-                  {open ? <X className="size-4" /> : <Menu className="size-4" />}
+                  {open ? <X className="size-4" aria-hidden="true" /> : <Menu className="size-4" aria-hidden="true" />}
                 </button>
               </div>
               <div className="relative min-w-0 lg:max-w-md">
@@ -99,18 +113,7 @@ export function AppShell() {
                 <Button size="sm" className="hidden sm:inline-flex" onClick={() => setCreating(true)}>
                   <Plus className="size-4" /> New task
                 </Button>
-                <Link
-                  to="/app/notifications"
-                  aria-label="Notifications"
-                  className="press relative grid size-9 place-items-center rounded-lg border border-border transition-colors hover:border-teal/50"
-                >
-                  <Bell className="size-4" />
-                  {unread > 0 && (
-                    <span className="absolute -top-1 -right-1 grid size-4 place-items-center rounded-full bg-amber text-[10px] font-bold text-background">
-                      {unread}
-                    </span>
-                  )}
-                </Link>
+                <NotificationsCenter now={now} />
                 <Link
                   to="/app/settings"
                   aria-label="Profile"
@@ -124,6 +127,8 @@ export function AppShell() {
             {/* Mobile nav drawer */}
             {open && (
               <motion.nav
+                id="molade-mobile-nav"
+                aria-label="Primary"
                 initial={{ opacity: 0, y: -8 }}
                 animate={{ opacity: 1, y: 0 }}
                 className="grid gap-1 border-t border-border/70 px-4 py-3 lg:hidden"
@@ -138,7 +143,7 @@ export function AppShell() {
 
             {/* Persistent Next up strip */}
             {nextUp && (
-              <div className="flex items-center gap-3 overflow-hidden border-t border-border/70 bg-surface/40 px-4 py-2 sm:px-6">
+              <div aria-label="Next up" className="flex items-center gap-3 overflow-hidden border-t border-border/70 bg-surface/40 px-4 py-2 sm:px-6">
                 <span className="shrink-0 text-[10px] tracking-[0.18em] text-muted-foreground uppercase">
                   Next up
                 </span>
@@ -161,14 +166,14 @@ export function AppShell() {
             )}
           </header>
 
-          <main className="px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pb-16">
+          <main id="molade-main" tabIndex={-1} className="px-4 pt-8 pb-[calc(7rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-10 lg:pb-16">
             <Outlet />
           </main>
         </div>
       </div>
 
       {/* Bottom nav — mobile */}
-      <nav className="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 lg:hidden">
+      <nav aria-label="Primary mobile" className="pb-safe px-safe fixed inset-x-0 bottom-0 z-40 lg:hidden">
         <div className="mx-auto grid max-w-md grid-cols-5 rounded-2xl border border-border/70 bg-background/80 p-1.5 shadow-[0_18px_40px_-18px_oklch(0_0_0/0.8)] backdrop-blur-2xl">
           {NAV.slice(0, 5).map((item) => {
             const active = "exact" in item && item.exact ? pathname === item.to : pathname.startsWith(item.to);
@@ -180,7 +185,12 @@ export function AppShell() {
               >
                 <Link
                   to={item.to}
-                  aria-label={item.label}
+                  aria-label={
+                    item.label === "Notifications" && unread
+                      ? `${item.label}, ${unread} unread`
+                      : item.label
+                  }
+                  aria-current={active ? "page" : undefined}
                   onClick={() => tapFeedback()}
                   className={cn(
                     "relative flex touch-manipulation flex-col items-center gap-1 rounded-xl py-2 text-[10px] transition-colors duration-200",
@@ -224,8 +234,10 @@ export function AppShell() {
         onOpenChange={setCreating}
         onSave={(d) => addTask({ ...d, completedAt: undefined })}
       />
+      <OnboardingTour />
       <span className="sr-only">{now}</span>
     </div>
+    </MotionConfig>
   );
 }
 
@@ -242,15 +254,19 @@ function NavItem({
   return (
     <Link
       to={item.to}
+      aria-current={active ? "page" : undefined}
       className={cn(
         "group relative flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors",
         active ? "bg-teal/12 text-teal" : "text-muted-foreground hover:bg-surface/70 hover:text-foreground",
       )}
     >
-      <item.icon className="size-4 shrink-0" />
+      <item.icon className="size-4 shrink-0" aria-hidden="true" />
       <span className="truncate">{item.label}</span>
       {!!badge && (
-        <span className="ml-auto rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">{badge}</span>
+        <span className="ml-auto rounded-full bg-amber/20 px-1.5 text-[10px] font-bold text-amber">
+          {badge}
+          <span className="sr-only"> unread</span>
+        </span>
       )}
     </Link>
   );
