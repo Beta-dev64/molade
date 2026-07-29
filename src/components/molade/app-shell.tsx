@@ -5,6 +5,7 @@ import {
   ListChecks,
   Sparkles,
   BarChart3,
+  Bell,
   Settings,
   Search,
   Plus,
