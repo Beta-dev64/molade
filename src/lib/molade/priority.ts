@@ -147,6 +147,22 @@ export function rankTask(task: Task, now: number): RankedTask {
     });
   }
 
+  // 6. Snoozed — you told Molade to bring this back later
+  const snoozedFor =
+    task.snoozedUntil && new Date(task.snoozedUntil).getTime() > now
+      ? Math.max(1, Math.round((new Date(task.snoozedUntil).getTime() - now) / 36e5))
+      : 0;
+  if (snoozedFor && task.status !== "completed") {
+    score -= 25;
+    reasons.push({
+      kind: "preference",
+      label: "Snoozed",
+      detail: `You snoozed this — it returns in about ${snoozedFor}h`,
+      weight: -25,
+    });
+  }
+
+
   const level: PriorityLevel =
     task.status === "completed"
       ? "Low"

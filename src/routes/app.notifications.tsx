@@ -1,10 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AlertTriangle, Bell, CalendarClock, CheckCheck, Sparkles } from "lucide-react";
+import { Bell, CheckCheck, Clock, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { EmptyState } from "@/components/molade/empty-state";
-import { useMolade } from "@/store/molade-store";
+import { useMolade, useNow } from "@/store/molade-store";
+import {
+  NOTIFICATION_ICONS,
+  NotificationActions,
+  isNotificationActive,
+  notificationTone,
+} from "@/components/molade/notifications-center";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/notifications")({
@@ -19,18 +25,15 @@ export const Route = createFileRoute("/app/notifications")({
   component: Notifications,
 });
 
-const ICONS = {
-  deadline: CalendarClock,
-  priority: Sparkles,
-  overdue: AlertTriangle,
-  system: Bell,
-} as const;
-
 const LEADS = ["24h", "12h", "3h"] as const;
 
 function Notifications() {
-  const { notifications, markAllRead, markNotificationRead, prefs, setPrefs } = useMolade();
-  const unread = notifications.filter((n) => !n.read).length;
+  const { notifications, markAllRead, markNotificationRead, prefs, setPrefs, restoreNotification } =
+    useMolade();
+  const now = useNow();
+  const active = notifications.filter((n) => isNotificationActive(n, now));
+  const snoozed = notifications.filter((n) => !isNotificationActive(n, now));
+  const unread = active.filter((n) => !n.read).length;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -49,42 +52,95 @@ function Notifications() {
         )}
       </header>
 
-      {notifications.length === 0 ? (
-        <EmptyState className="mt-10" icon={<Bell className="size-5" />} title="Nothing yet" body="Reminders and priority changes will appear here." />
+      {active.length === 0 ? (
+        <EmptyState
+          className="mt-10"
+          icon={<Bell className="size-5" />}
+          title={notifications.length === 0 ? "Nothing yet" : "All clear"}
+          body={
+            notifications.length === 0
+              ? "Reminders and priority changes will appear here."
+              : "Everything is dismissed or snoozed. Snoozed reminders come back on their own."
+          }
+        />
       ) : (
-        <ul className="mt-9 divide-y divide-border/60">
-          {notifications.map((n) => {
-            const Icon = ICONS[n.type];
+        <ul className="mt-9 divide-y divide-border/60" aria-label="Active reminders">
+          {active.map((n) => {
+            const Icon = NOTIFICATION_ICONS[n.type];
             return (
-              <li key={n.id}>
-                <button
-                  onClick={() => markNotificationRead(n.id)}
-                  className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-start gap-4 py-5 text-left transition-colors hover:bg-surface/40"
+              <li key={n.id} className="grid grid-cols-[auto_minmax(0,1fr)] gap-4 py-5">
+                <span
+                  aria-hidden="true"
+                  className={cn(
+                    "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border",
+                    notificationTone(n.type),
+                  )}
                 >
-                  <span
-                    className={cn(
-                      "mt-0.5 grid size-8 shrink-0 place-items-center rounded-full border",
-                      n.type === "overdue"
-                        ? "border-crit/40 bg-crit/12 text-crit"
-                        : n.type === "deadline"
-                          ? "border-amber/40 bg-amber/12 text-amber"
-                          : "border-teal/40 bg-teal/12 text-teal",
-                    )}
-                  >
-                    <Icon className="size-4" />
-                  </span>
-                  <div className="min-w-0">
-                    <p className={cn("text-sm", n.read ? "text-muted-foreground" : "font-semibold")}>{n.title}</p>
-                    <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                  <Icon className="size-4" />
+                </span>
+                <div className="min-w-0">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2">
+                    <p className={cn("text-sm", n.read ? "text-muted-foreground" : "font-semibold")}>
+                      {n.title}
+                      {!n.read && <span className="sr-only"> (unread)</span>}
+                    </p>
+                    <span className="text-[11px] whitespace-nowrap text-muted-foreground">
+                      {new Date(n.createdAt).toLocaleDateString(undefined, {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </span>
                   </div>
-                  <span className="text-[11px] whitespace-nowrap text-muted-foreground">
-                    {new Date(n.createdAt).toLocaleDateString(undefined, { month: "short", day: "numeric" })}
-                  </span>
-                </button>
+                  <p className="mt-1 text-xs text-muted-foreground">{n.body}</p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <NotificationActions id={n.id} />
+                    {!n.read && (
+                      <button
+                        type="button"
+                        onClick={() => markNotificationRead(n.id)}
+                        className="press rounded-full border border-teal/40 bg-teal/10 px-2.5 py-1 text-[11px] font-semibold text-teal"
+                      >
+                        Mark read
+                      </button>
+                    )}
+                  </div>
+                </div>
               </li>
             );
           })}
         </ul>
+      )}
+
+      {snoozed.length > 0 && (
+        <section className="mt-12 rounded-2xl border border-border bg-surface/40 p-5">
+          <h2 className="flex items-center gap-2 text-sm font-semibold">
+            <Clock className="size-4 text-muted-foreground" aria-hidden="true" /> Snoozed
+          </h2>
+          <p className="mt-1.5 text-xs text-muted-foreground">
+            These reminders are paused, and their tasks sit lower in your ranking until they return.
+          </p>
+          <ul className="mt-4 space-y-3">
+            {snoozed.map((n) => (
+                <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 text-xs">
+                  <span className="min-w-0 truncate text-muted-foreground">
+                    {n.title} · back{" "}
+                    {new Date(n.snoozedUntil!).toLocaleString(undefined, {
+                      weekday: "short",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => restoreNotification(n.id)}
+                    className="press inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 font-medium text-teal"
+                  >
+                    <RotateCcw className="size-3" aria-hidden="true" /> Restore now
+                  </button>
+                </li>
+              ))}
+          </ul>
+        </section>
       )}
 
       <section className="mt-14 border-t border-border/60 pt-10">
