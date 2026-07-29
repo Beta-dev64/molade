@@ -22,7 +22,8 @@ export const Route = createFileRoute("/app/settings")({
 });
 
 function Settings() {
-  const { user, setUser, prefs, setPrefs } = useMolade();
+  const { user, setUser, prefs, setPrefs, reducedMotion, setReducedMotion, setTourSeen } =
+    useMolade();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [programme, setProgramme] = useState(user.programme);
@@ -135,6 +136,48 @@ function Settings() {
             <p className="mt-1 text-xs text-muted-foreground">Higher contrast on bright screens.</p>
           </div>
           <Switch id="tone" checked={dense} onCheckedChange={setDense} />
+        </div>
+      </Section>
+
+      <Section title="Accessibility" hint="Molade should work the way you need it to.">
+        <div className="space-y-6">
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+            <div className="min-w-0">
+              <Label htmlFor="reduced-motion" className="text-sm">
+                Reduce motion
+              </Label>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Turns off entrance animations, reordering transitions and chart motion. Follows your
+                system setting by default.
+              </p>
+            </div>
+            <Switch
+              id="reduced-motion"
+              checked={reducedMotion}
+              onCheckedChange={(v) => {
+                setReducedMotion(v);
+                toast.success(v ? "Motion reduced" : "Motion restored");
+              }}
+            />
+          </div>
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
+            <div className="min-w-0">
+              <p className="text-sm font-medium">Product walkthrough</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Replay the three-step tour covering next up, priorities and ranking reasons.
+              </p>
+            </div>
+            <Button
+              variant="outline"
+              className="border-border"
+              onClick={() => {
+                setTourSeen(false);
+                toast.success("Walkthrough will start on your dashboard");
+              }}
+            >
+              Replay tour
+            </Button>
+          </div>
         </div>
       </Section>
 
