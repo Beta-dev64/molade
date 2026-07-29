@@ -28,7 +28,7 @@ export const Route = createFileRoute("/app/notifications")({
 const LEADS = ["24h", "12h", "3h"] as const;
 
 function Notifications() {
-  const { notifications, markAllRead, markNotificationRead, prefs, setPrefs, tasks, unsnoozeTask } =
+  const { notifications, markAllRead, markNotificationRead, prefs, setPrefs, restoreNotification } =
     useMolade();
   const now = useNow();
   const active = notifications.filter((n) => isNotificationActive(n, now));
@@ -120,9 +120,7 @@ function Notifications() {
             These reminders are paused, and their tasks sit lower in your ranking until they return.
           </p>
           <ul className="mt-4 space-y-3">
-            {snoozed.map((n) => {
-              const task = tasks.find((t) => t.id === n.taskId);
-              return (
+            {snoozed.map((n) => (
                 <li key={n.id} className="flex flex-wrap items-center justify-between gap-3 text-xs">
                   <span className="min-w-0 truncate text-muted-foreground">
                     {n.title} · back{" "}
@@ -134,18 +132,13 @@ function Notifications() {
                   </span>
                   <button
                     type="button"
-                    onClick={() => {
-                      markNotificationRead(n.id);
-                      setPrefs({});
-                      if (task) unsnoozeTask(task.id);
-                    }}
+                    onClick={() => restoreNotification(n.id)}
                     className="press inline-flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 font-medium text-teal"
                   >
                     <RotateCcw className="size-3" aria-hidden="true" /> Restore now
                   </button>
                 </li>
-              );
-            })}
+              ))}
           </ul>
         </section>
       )}

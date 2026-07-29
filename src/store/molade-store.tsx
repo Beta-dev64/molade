@@ -40,6 +40,7 @@ interface MoladeState {
   markAllRead: () => void;
   dismissNotification: (id: string) => void;
   snoozeNotification: (id: string, hours: number) => void;
+  restoreNotification: (id: string) => void;
   snoozeTask: (id: string, hours: number) => void;
   unsnoozeTask: (id: string) => void;
   reducedMotion: boolean;
@@ -238,6 +239,13 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
         toast.success(`Snoozed for ${hours}h`, {
           description: "It will come back when it is worth your attention.",
         });
+    },
+    restoreNotification: (id) => {
+      const n = notifications.find((x) => x.id === id);
+      setNotifications((prev) =>
+        prev.map((x) => (x.id === id ? { ...x, snoozedUntil: undefined, read: false } : x)),
+      );
+      if (n?.taskId) unsnoozeTask(n.taskId);
     },
     snoozeTask,
     unsnoozeTask,
