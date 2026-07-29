@@ -1,4 +1,12 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from "react";
 import { toast } from "sonner";
 import type { ActivityItem, AppNotification, RankedTask, Task } from "@/lib/molade/types";
 import { rankAll } from "@/lib/molade/priority";
@@ -30,7 +38,18 @@ interface MoladeState {
   recalculate: () => void;
   markNotificationRead: (id: string) => void;
   markAllRead: () => void;
+  dismissNotification: (id: string) => void;
+  snoozeNotification: (id: string, hours: number) => void;
+  snoozeTask: (id: string, hours: number) => void;
+  unsnoozeTask: (id: string) => void;
+  reducedMotion: boolean;
+  setReducedMotion: (v: boolean) => void;
+  tourSeen: boolean;
+  setTourSeen: (v: boolean) => void;
 }
+
+const TOUR_KEY = "molade.tour.seen";
+const MOTION_KEY = "molade.reducedMotion";
 
 const Ctx = createContext<MoladeState | null>(null);
 
@@ -48,6 +67,43 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
     priorityChanges: true,
     weeklyDigest: true,
   });
+  const [reducedMotion, setReducedMotionState] = useState(false);
+  const [tourSeen, setTourSeenState] = useState(true);
+
+  useEffect(() => {
+    try {
+      setTourSeenState(window.localStorage.getItem(TOUR_KEY) === "1");
+      setReducedMotionState(
+        window.localStorage.getItem(MOTION_KEY) === "1" ||
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      );
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  useEffect(() => {
+    document.documentElement.classList.toggle("reduce-motion", reducedMotion);
+  }, [reducedMotion]);
+
+  const setReducedMotion = useCallback((v: boolean) => {
+    setReducedMotionState(v);
+    try {
+      window.localStorage.setItem(MOTION_KEY, v ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const setTourSeen = useCallback((v: boolean) => {
+    setTourSeenState(v);
+    try {
+      window.localStorage.setItem(TOUR_KEY, v ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
   const [user, setUserState] = useState({
     name: "Adeola Molade",
     email: "a.molade@ulster.ac.uk",
@@ -118,6 +174,24 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
     toast.success("Task deleted");
   }, []);
 
+  const snoozeTask = useCallback(
+    (id: string, hours: number) => {
+      const until = new Date(Date.now() + hours * 36e5).toISOString();
+      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, snoozedUntil: until } : t)));
+      const t = tasks.find((x) => x.id === id);
+      logActivity("reminder", `Snoozed ${t?.title ?? "task"} for ${hours}h`);
+      toast.success(`Snoozed for ${hours}h`, {
+        description: t ? `${t.title} drops down the ranking until then.` : undefined,
+      });
+    },
+    [tasks, logActivity],
+  );
+
+  const unsnoozeTask = useCallback((id: string) => {
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, snoozedUntil: undefined } : t)));
+    toast.success("Back in the ranking");
+  }, []);
+
   const recalculate = useCallback(() => {
     setRecalculating(true);
     window.setTimeout(() => {
@@ -148,6 +222,29 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
     markNotificationRead: (id) =>
       setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n))),
     markAllRead: () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true }))),
+    dismissNotification: (id) => {
+      const n = notifications.find((x) => x.id === id);
+      setNotifications((prev) => prev.filter((x) => x.id !== id));
+      toast.success("Reminder dismissed", { description: n?.title });
+    },
+    snoozeNotification: (id, hours) => {
+      const until = new Date(Date.now() + hours * 36e5).toISOString();
+      const n = notifications.find((x) => x.id === id);
+      setNotifications((prev) =>
+        prev.map((x) => (x.id === id ? { ...x, snoozedUntil: until, read: true } : x)),
+      );
+      if (n?.taskId) snoozeTask(n.taskId, hours);
+      else
+        toast.success(`Snoozed for ${hours}h`, {
+          description: "It will come back when it is worth your attention.",
+        });
+    },
+    snoozeTask,
+    unsnoozeTask,
+    reducedMotion,
+    setReducedMotion,
+    tourSeen,
+    setTourSeen,
   };
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;
