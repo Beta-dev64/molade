@@ -44,7 +44,12 @@ export interface AppNotification {
   body: string;
   createdAt: string;
   read: boolean;
+  /** Task this reminder refers to, when applicable. */
+  taskId?: string;
+  /** ISO string — reminder is hidden from the active list until then. */
+  snoozedUntil?: string;
 }
+
 
 export interface ActivityItem {
   id: string;
