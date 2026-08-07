@@ -1,30 +1,57 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
-import { MoladeProvider } from "@/store/molade-store";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { MoladeProvider, useMolade } from "@/store/molade-store";
 import { AppShell } from "@/components/molade/app-shell";
 import { Skeleton } from "@/components/ui/skeleton";
+import { getAccessToken } from "@/lib/api/token";
 
 export const Route = createFileRoute("/app")({
   head: () => ({
     meta: [
       { title: "Molade — Your ranked workload" },
-      { name: "description", content: "Your coursework, ranked automatically by deadline, workload and status." },
+      {
+        name: "description",
+        content: "Your coursework, ranked automatically by deadline, workload and status.",
+      },
     ],
   }),
   component: AppLayout,
 });
 
 function AppLayout() {
+  const navigate = useNavigate();
   const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+
+  useEffect(() => {
+    if (!getAccessToken()) {
+      navigate({ to: "/login" });
+      return;
+    }
+    setMounted(true);
+  }, [navigate]);
 
   if (!mounted) return <AppSkeleton />;
 
   return (
     <MoladeProvider>
-      <AppShell />
+      <AppReadyGate />
     </MoladeProvider>
   );
+}
+
+function AppReadyGate() {
+  const navigate = useNavigate();
+  const { ready } = useMolade();
+
+  useEffect(() => {
+    if (ready && !getAccessToken()) {
+      navigate({ to: "/login" });
+    }
+  }, [ready, navigate]);
+
+  if (!ready) return <AppSkeleton />;
+  if (!getAccessToken()) return <AppSkeleton />;
+  return <AppShell />;
 }
 
 function AppSkeleton() {

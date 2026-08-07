@@ -57,3 +57,17 @@ export interface ActivityItem {
   at: string;
   kind: "completed" | "created" | "updated" | "reminder";
 }
+
+export interface ReminderPrefs {
+  email: boolean;
+  push: boolean;
+  lead: "24h" | "12h" | "3h";
+  priorityChanges: boolean;
+  weeklyDigest: boolean;
+}
+
+export interface MoladeUser {
+  name: string;
+  email: string;
+  programme: string;
+}

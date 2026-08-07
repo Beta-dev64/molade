@@ -6,6 +6,8 @@ import heroImage from "@/assets/hero-atmosphere.jpg";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { ApiError } from "@/lib/api/client";
+import { login, register } from "@/lib/api/auth";
 import { BrandMark } from "./app-shell";
 import { cn } from "@/lib/utils";
 
@@ -55,19 +57,47 @@ export function AuthLayout({
     return next;
   }
 
-  function submit(e: React.FormEvent) {
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     setTouched(Object.fromEntries(fields.map((f) => [f.name, true])));
     const errs = validate(true);
     if (Object.keys(errs).length) return;
+
     setLoading(true);
-    window.setTimeout(() => {
+    try {
+      if (mode === "login") {
+        await login(values.email!.trim(), values.password!);
+        toast.success("Welcome back");
+        navigate({ to: "/app" });
+      } else {
+        const result = await register({
+          name: values.name!.trim(),
+          email: values.email!.trim(),
+          password: values.password!,
+        });
+        toast.success("Account created", {
+          description: "Check your email for a verification code.",
+        });
+        navigate({
+          to: "/verify-email",
+          search: { email: result.email },
+        });
+      }
+    } catch (err) {
+      if (err instanceof ApiError && err.code === "EMAIL_NOT_VERIFIED") {
+        toast.error("Verify your email first", {
+          description: "We can resend a code on the next screen.",
+        });
+        navigate({
+          to: "/verify-email",
+          search: { email: values.email!.trim() },
+        });
+      } else {
+        toast.error(err instanceof ApiError ? err.message : "Something went wrong");
+      }
+    } finally {
       setLoading(false);
-      toast.success(mode === "login" ? "Welcome back" : "Account created", {
-        description: "Demo mode — no data leaves this device.",
-      });
-      navigate({ to: "/app" });
-    }, 700);
+    }
   }
 
   return (
@@ -135,28 +165,22 @@ export function AuthLayout({
               </div>
             ))}
 
+            {mode === "login" && (
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-xs font-medium text-teal hover:underline"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            )}
+
             <Button type="submit" size="lg" className="w-full rounded-full" disabled={loading}>
               {loading && <Loader2 className="size-4 animate-spin" />}
               {submitLabel}
             </Button>
           </form>
-
-          <div className="mt-6 flex items-center gap-3 text-[11px] tracking-wide text-muted-foreground uppercase">
-            <span className="h-px flex-1 bg-border" /> or <span className="h-px flex-1 bg-border" />
-          </div>
-          <div className="mt-6 grid gap-3 sm:grid-cols-2">
-            {["Continue with Google", "Continue with university SSO"].map((l) => (
-              <Button
-                key={l}
-                type="button"
-                variant="outline"
-                className="rounded-full border-border text-xs"
-                onClick={() => toast.info("Demo placeholder", { description: "Social sign-in is not wired up." })}
-              >
-                {l}
-              </Button>
-            ))}
-          </div>
 
           <p className="mt-8 text-sm text-muted-foreground">{footer}</p>
           <p className="mt-6 text-xs leading-relaxed text-muted-foreground/80">
@@ -169,7 +193,15 @@ export function AuthLayout({
   );
 }
 
-export function AuthSwitchLink({ to, prompt, label }: { to: "/login" | "/register"; prompt: string; label: string }) {
+export function AuthSwitchLink({
+  to,
+  prompt,
+  label,
+}: {
+  to: "/login" | "/register";
+  prompt: string;
+  label: string;
+}) {
   return (
     <>
       {prompt}{" "}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -7,13 +7,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { useMolade } from "@/store/molade-store";
+import { usersApi } from "@/lib/api/resources";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/settings")({
   head: () => ({
     meta: [
       { title: "Settings — Molade" },
-      { name: "description", content: "Profile, password, notification preferences, appearance and privacy for your Molade account." },
+      {
+        name: "description",
+        content:
+          "Profile, password, notification preferences, appearance and privacy for your Molade account.",
+      },
       { property: "og:title", content: "Settings — Molade" },
       { property: "og:description", content: "Control your profile, reminders and appearance." },
     ],
@@ -22,12 +27,31 @@ export const Route = createFileRoute("/app/settings")({
 });
 
 function Settings() {
-  const { user, setUser, prefs, setPrefs, reducedMotion, setReducedMotion, setTourSeen } =
-    useMolade();
+  const navigate = useNavigate();
+  const {
+    user,
+    setUser,
+    prefs,
+    setPrefs,
+    changePassword,
+    logout,
+    reducedMotion,
+    setReducedMotion,
+    setTourSeen,
+  } = useMolade();
   const [name, setName] = useState(user.name);
   const [email, setEmail] = useState(user.email);
   const [programme, setProgramme] = useState(user.programme);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [dense, setDense] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setName(user.name);
+    setEmail(user.email);
+    setProgramme(user.programme);
+  }, [user]);
 
   useEffect(() => {
     const el = document.documentElement;
@@ -45,25 +69,40 @@ function Settings() {
       <Section title="Profile" hint="Shown across your dashboard and reminders.">
         <form
           className="grid gap-5 sm:grid-cols-2"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            setUser({ name, email, programme });
-            toast.success("Profile updated");
+            setSaving(true);
+            try {
+              await setUser({ name, email, programme });
+            } finally {
+              setSaving(false);
+            }
           }}
         >
           <FieldWrap label="Full name" id="s-name">
             <Input id="s-name" value={name} onChange={(e) => setName(e.target.value)} />
           </FieldWrap>
           <FieldWrap label="University email" id="s-email">
-            <Input id="s-email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+            <Input
+              id="s-email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
           </FieldWrap>
           <div className="sm:col-span-2">
             <FieldWrap label="Programme" id="s-prog">
-              <Input id="s-prog" value={programme} onChange={(e) => setProgramme(e.target.value)} />
+              <Input
+                id="s-prog"
+                value={programme}
+                onChange={(e) => setProgramme(e.target.value)}
+              />
             </FieldWrap>
           </div>
           <div className="sm:col-span-2">
-            <Button type="submit">Save profile</Button>
+            <Button type="submit" disabled={saving}>
+              Save profile
+            </Button>
           </div>
         </form>
       </Section>
@@ -71,16 +110,38 @@ function Settings() {
       <Section title="Password" hint="Use at least 8 characters, including a number.">
         <form
           className="grid gap-5 sm:grid-cols-2"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            toast.success("Password updated", { description: "Demo mode — nothing was sent." });
+            if (newPassword.length < 8) {
+              toast.error("Use at least 8 characters");
+              return;
+            }
+            await changePassword(currentPassword, newPassword);
+            setCurrentPassword("");
+            setNewPassword("");
           }}
         >
           <FieldWrap label="Current password" id="s-cur">
-            <Input id="s-cur" type="password" autoComplete="current-password" placeholder="••••••••" />
+            <Input
+              id="s-cur"
+              type="password"
+              autoComplete="current-password"
+              placeholder="••••••••"
+              value={currentPassword}
+              onChange={(e) => setCurrentPassword(e.target.value)}
+              required
+            />
           </FieldWrap>
           <FieldWrap label="New password" id="s-new">
-            <Input id="s-new" type="password" autoComplete="new-password" placeholder="••••••••" />
+            <Input
+              id="s-new"
+              type="password"
+              autoComplete="new-password"
+              placeholder="••••••••"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              required
+            />
           </FieldWrap>
           <div className="sm:col-span-2">
             <Button type="submit" variant="outline" className="border-border">
@@ -103,7 +164,11 @@ function Settings() {
               <Label htmlFor={`n-${key}`} className="text-sm">
                 {label}
               </Label>
-              <Switch id={`n-${key}`} checked={prefs[key]} onCheckedChange={(v) => setPrefs({ [key]: v })} />
+              <Switch
+                id={`n-${key}`}
+                checked={prefs[key]}
+                onCheckedChange={(v) => void setPrefs({ [key]: v })}
+              />
             </div>
           ))}
           <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-4">
@@ -112,11 +177,14 @@ function Settings() {
               {(["24h", "12h", "3h"] as const).map((l) => (
                 <button
                   key={l}
-                  onClick={() => setPrefs({ lead: l })}
+                  type="button"
+                  onClick={() => void setPrefs({ lead: l })}
                   aria-pressed={prefs.lead === l}
                   className={cn(
                     "rounded-full border px-3 py-1.5 text-xs transition-all",
-                    prefs.lead === l ? "border-teal/50 bg-teal/15 text-teal" : "border-border text-muted-foreground",
+                    prefs.lead === l
+                      ? "border-teal/50 bg-teal/15 text-teal"
+                      : "border-border text-muted-foreground",
                   )}
                 >
                   {l}
@@ -184,18 +252,73 @@ function Settings() {
       <Section title="Privacy" hint="">
         <div className="flex gap-4 rounded-xl border border-border bg-surface/40 p-5">
           <ShieldCheck className="size-5 shrink-0 text-teal" />
-          <p className="text-xs leading-relaxed text-muted-foreground">
-            Molade processes your coursework details only to rank tasks and schedule reminders. We
-            do not profile you, sell data, or share it with third parties. You can export or delete
-            everything at any time, in line with UK GDPR.
-          </p>
+          <div className="space-y-3 text-xs leading-relaxed text-muted-foreground">
+            <p>
+              Molade processes your coursework details only to rank tasks and schedule reminders. We
+              do not profile you, sell data, or share it with third parties — in line with UK GDPR.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-border"
+                onClick={async () => {
+                  const data = await usersApi.exportData();
+                  const blob = new Blob([JSON.stringify(data, null, 2)], {
+                    type: "application/json",
+                  });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement("a");
+                  a.href = url;
+                  a.download = "molade-export.json";
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success("Export downloaded");
+                }}
+              >
+                Export my data
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-crit/40 text-crit"
+                onClick={async () => {
+                  if (!window.confirm("Delete your account and all tasks permanently?")) return;
+                  await usersApi.deleteAccount();
+                  await logout();
+                  toast.success("Account deleted");
+                  navigate({ to: "/" });
+                }}
+              >
+                Delete account
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={async () => {
+                  await logout();
+                  navigate({ to: "/login" });
+                }}
+              >
+                Sign out
+              </Button>
+            </div>
+          </div>
         </div>
       </Section>
     </div>
   );
 }
 
-function Section({ title, hint, children }: { title: string; hint: string; children: React.ReactNode }) {
+function Section({
+  title,
+  hint,
+  children,
+}: {
+  title: string;
+  hint: string;
+  children: React.ReactNode;
+}) {
   return (
     <section className="mt-12 border-t border-border/60 pt-10">
       <h2 className="text-xl">{title}</h2>
@@ -205,7 +328,15 @@ function Section({ title, hint, children }: { title: string; hint: string; child
   );
 }
 
-function FieldWrap({ label, id, children }: { label: string; id: string; children: React.ReactNode }) {
+function FieldWrap({
+  label,
+  id,
+  children,
+}: {
+  label: string;
+  id: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="space-y-2">
       <Label htmlFor={id} className="text-xs tracking-[0.1em] text-muted-foreground uppercase">

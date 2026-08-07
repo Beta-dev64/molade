@@ -28,7 +28,7 @@ export const Route = createFileRoute("/")({
       {
         property: "og:description",
         content:
-          "Molade is an intelligent task manager for university students. It ranks coursework by deadline, workload and status, and explains every recommendation.",
+          "Your deadlines, ranked with reasons. A calm academic companion for coursework, exams and projects.",
       },
     ],
   }),
@@ -200,7 +200,7 @@ function Landing() {
           {[
             [ListChecks, "Tasks", "Filter by today, upcoming, overdue or completed. Search across modules. Complete with one keystroke."],
             [Sparkles, "Priorities", "A ranked queue with the reasoning attached to every position, and a one-click recalculation."],
-            [LayoutDashboard, "Dashboard", "Completion rate, deadlines this week and a workload heat strip — answering “what now?” in one glance."],
+            [LayoutDashboard, "Dashboard", "Completion rate, deadlines this week and a workload heat strip — answering ΓÇ£what now?ΓÇ¥ in one glance."],
             [Mail, "Email reminders", "Choose 24h, 12h or 3h before a deadline. Priority changes and overdue alerts included."],
           ].map(([Icon, t, d]) => {
             const I = Icon as typeof Mail;

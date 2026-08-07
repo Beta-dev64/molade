@@ -25,8 +25,13 @@ export const Route = createFileRoute("/app/")({
   component: Dashboard,
 });
 
+function firstName(fullName: string) {
+  const part = fullName.trim().split(/\s+/)[0];
+  return part || "there";
+}
+
 function Dashboard() {
-  const { ranked, tasks, activity, addTask, toggleComplete } = useMolade();
+  const { user, ranked, tasks, activity, addTask, toggleComplete } = useMolade();
   const now = useNow();
   const [showWhy, setShowWhy] = useState(false);
   const [quick, setQuick] = useState("");
@@ -62,14 +67,19 @@ function Dashboard() {
 
   const hour = new Date(now).getHours();
   const greeting = hour < 12 ? "Good morning" : hour < 18 ? "Good afternoon" : "Good evening";
+  const nextHint = nextUp
+    ? `${nextUp.task.title} should own your next block.`
+    : "Add a task with a deadline and Molade will rank what comes next.";
 
   return (
     <div className="mx-auto max-w-5xl">
       <header className="rise">
-        <h1 className="display-1">{greeting}, Adeola.</h1>
+        <h1 className="display-1">
+          {greeting}, {firstName(user.name)}.
+        </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {overdue > 0 ? `${overdue} task${overdue > 1 ? "s" : ""} overdue · ` : ""}
-          {dueThisWeek} due this week · Dissertation work should own your next block.
+          {dueThisWeek} due this week · {nextHint}
         </p>
       </header>
 

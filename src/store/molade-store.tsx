@@ -8,19 +8,37 @@ import {
   type ReactNode,
 } from "react";
 import { toast } from "sonner";
-import type { ActivityItem, AppNotification, RankedTask, Task } from "@/lib/molade/types";
+import type {
+  ActivityItem,
+  AppNotification,
+  MoladeUser,
+  RankedTask,
+  ReminderPrefs,
+  Task,
+} from "@/lib/molade/types";
 import { rankAll } from "@/lib/molade/priority";
-import { seedActivity, seedNotifications, seedTasks } from "@/lib/molade/mock-data";
+import { ApiError } from "@/lib/api/client";
+import { fetchMe, logout as apiLogout } from "@/lib/api/auth";
+import {
+  activityApi,
+  notificationsApi,
+  prioritiesApi,
+  tasksApi,
+  usersApi,
+} from "@/lib/api/resources";
+import { getAccessToken } from "@/lib/api/token";
+import {
+  connectSocket,
+  disconnectSocket,
+  ensureBrowserNotifyPermission,
+  maybeBrowserNotify,
+} from "@/lib/socket";
 
-export interface ReminderPrefs {
-  email: boolean;
-  push: boolean;
-  lead: "24h" | "12h" | "3h";
-  priorityChanges: boolean;
-  weeklyDigest: boolean;
-}
+export type { ReminderPrefs };
 
 interface MoladeState {
+  ready: boolean;
+  socketConnected: boolean;
   tasks: Task[];
   ranked: RankedTask[];
   notifications: AppNotification[];
@@ -28,21 +46,24 @@ interface MoladeState {
   prefs: ReminderPrefs;
   recalcKey: number;
   recalculating: boolean;
-  user: { name: string; email: string; programme: string };
-  setPrefs: (p: Partial<ReminderPrefs>) => void;
-  setUser: (u: Partial<MoladeState["user"]>) => void;
-  addTask: (t: Omit<Task, "id" | "createdAt">) => void;
-  updateTask: (id: string, patch: Partial<Task>) => void;
-  toggleComplete: (id: string) => void;
-  deleteTask: (id: string) => void;
-  recalculate: () => void;
-  markNotificationRead: (id: string) => void;
-  markAllRead: () => void;
-  dismissNotification: (id: string) => void;
-  snoozeNotification: (id: string, hours: number) => void;
-  restoreNotification: (id: string) => void;
-  snoozeTask: (id: string, hours: number) => void;
-  unsnoozeTask: (id: string) => void;
+  user: MoladeUser;
+  refresh: () => Promise<void>;
+  logout: () => Promise<void>;
+  setPrefs: (p: Partial<ReminderPrefs>) => Promise<void>;
+  setUser: (u: Partial<MoladeUser>) => Promise<void>;
+  changePassword: (currentPassword: string, newPassword: string) => Promise<void>;
+  addTask: (t: Omit<Task, "id" | "createdAt">) => Promise<void>;
+  updateTask: (id: string, patch: Partial<Task>) => Promise<void>;
+  toggleComplete: (id: string) => Promise<void>;
+  deleteTask: (id: string) => Promise<void>;
+  recalculate: () => Promise<void>;
+  markNotificationRead: (id: string) => Promise<void>;
+  markAllRead: () => Promise<void>;
+  dismissNotification: (id: string) => Promise<void>;
+  snoozeNotification: (id: string, hours: number) => Promise<void>;
+  restoreNotification: (id: string) => Promise<void>;
+  snoozeTask: (id: string, hours: number) => Promise<void>;
+  unsnoozeTask: (id: string) => Promise<void>;
   reducedMotion: boolean;
   setReducedMotion: (v: boolean) => void;
   tourSeen: boolean;
@@ -52,21 +73,36 @@ interface MoladeState {
 const TOUR_KEY = "molade.tour.seen";
 const MOTION_KEY = "molade.reducedMotion";
 
+const DEFAULT_PREFS: ReminderPrefs = {
+  email: true,
+  push: false,
+  lead: "24h",
+  priorityChanges: true,
+  weeklyDigest: true,
+};
+
 const Ctx = createContext<MoladeState | null>(null);
 
+function errMessage(err: unknown, fallback: string) {
+  if (err instanceof ApiError) return err.message;
+  if (err instanceof Error) return err.message;
+  return fallback;
+}
+
 export function MoladeProvider({ children }: { children: ReactNode }) {
-  const [now] = useState(() => Date.now());
-  const [tasks, setTasks] = useState<Task[]>(() => seedTasks(now));
-  const [notifications, setNotifications] = useState(() => seedNotifications(now));
-  const [activity, setActivity] = useState(() => seedActivity(now));
+  const [now, setNow] = useState(() => Date.now());
+  const [ready, setReady] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [activity, setActivity] = useState<ActivityItem[]>([]);
   const [recalcKey, setRecalcKey] = useState(0);
   const [recalculating, setRecalculating] = useState(false);
-  const [prefs, setPrefsState] = useState<ReminderPrefs>({
-    email: true,
-    push: false,
-    lead: "24h",
-    priorityChanges: true,
-    weeklyDigest: true,
+  const [prefs, setPrefsState] = useState<ReminderPrefs>(DEFAULT_PREFS);
+  const [user, setUserState] = useState<MoladeUser>({
+    name: "",
+    email: "",
+    programme: "",
   });
   const [reducedMotion, setReducedMotionState] = useState(false);
   const [tourSeen, setTourSeenState] = useState(true);
@@ -105,106 +141,233 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const [user, setUserState] = useState({
-    name: "Adeola Molade",
-    email: "a.molade@ulster.ac.uk",
-    programme: "MSc Computing & Information Systems",
-  });
+  const refresh = useCallback(async () => {
+    if (!getAccessToken()) {
+      setReady(true);
+      return;
+    }
+    const [me, taskList, notifList, activityList] = await Promise.all([
+      fetchMe(),
+      tasksApi.list(),
+      notificationsApi.list(),
+      activityApi.list(),
+    ]);
+    setUserState({
+      name: me.user.name,
+      email: me.user.email,
+      programme: me.user.programme,
+    });
+    setPrefsState(me.prefs);
+    setTasks(taskList);
+    setNotifications(notifList);
+    setActivity(activityList);
+    setNow(Date.now());
+    setReady(true);
+  }, []);
+
+  useEffect(() => {
+    refresh().catch((err) => {
+      console.error(err);
+      setReady(true);
+      toast.error("Couldn't load your workspace", {
+        description: errMessage(err, "Check that the API is running."),
+      });
+    });
+  }, [refresh]);
+
+  // Live notifications via Socket.IO (JWT auth)
+  useEffect(() => {
+    if (!ready || !getAccessToken()) {
+      disconnectSocket();
+      setSocketConnected(false);
+      return;
+    }
+
+    void ensureBrowserNotifyPermission(prefs.push);
+
+    const sock = connectSocket({
+      onStatus: setSocketConnected,
+      onNew: (n) => {
+        setNotifications((prev) => (prev.some((x) => x.id === n.id) ? prev : [n, ...prev]));
+        toast.message(n.title, { description: n.body });
+        maybeBrowserNotify(n, prefs.push);
+      },
+      onUpdated: (n) => {
+        setNotifications((prev) => prev.map((x) => (x.id === n.id ? n : x)));
+      },
+      onRemoved: (id) => {
+        setNotifications((prev) => prev.filter((x) => x.id !== id));
+      },
+      onSync: () => {
+        notificationsApi.list().then(setNotifications).catch(() => undefined);
+      },
+    });
+
+    setSocketConnected(Boolean(sock?.connected));
+
+    return () => {
+      disconnectSocket();
+      setSocketConnected(false);
+    };
+    // Reconnect when auth/ready changes; prefs.push only affects browser notify
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ready, user.email]);
 
   const ranked = useMemo(
     () => rankAll(tasks, now),
-    // recalcKey intentionally re-triggers the visible reorder animation
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [tasks, now, recalcKey],
   );
 
-  const logActivity = useCallback((kind: ActivityItem["kind"], text: string) => {
-    setActivity((prev) => [
-      { id: `a-${Math.random().toString(36).slice(2, 9)}`, kind, text, at: new Date().toISOString() },
-      ...prev,
-    ]);
+  const logout = useCallback(async () => {
+    disconnectSocket();
+    setSocketConnected(false);
+    await apiLogout();
+    setTasks([]);
+    setNotifications([]);
+    setActivity([]);
+    setUserState({ name: "", email: "", programme: "" });
   }, []);
 
-  const addTask = useCallback<MoladeState["addTask"]>(
-    (t) => {
-      const task: Task = { ...t, id: `t-${Math.random().toString(36).slice(2, 9)}`, createdAt: new Date().toISOString() };
-      setTasks((prev) => [task, ...prev]);
-      logActivity("created", `Added ${task.title}`);
-      toast.success("Task created", { description: `${task.title} has been ranked automatically.` });
-    },
-    [logActivity],
-  );
+  const setPrefs = useCallback(async (p: Partial<ReminderPrefs>) => {
+    const next = await usersApi.updatePrefs(p);
+    setPrefsState(next);
+    if (next.push) void ensureBrowserNotifyPermission(true);
+    toast.success("Preferences updated");
+  }, []);
 
-  const updateTask = useCallback<MoladeState["updateTask"]>(
-    (id, patch) => {
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, ...patch } : t)));
-      logActivity("updated", `Updated task details`);
-      toast.success("Task updated");
-    },
-    [logActivity],
-  );
+  const setUser = useCallback(async (u: Partial<MoladeUser>) => {
+    const updated = await usersApi.updateProfile(u);
+    setUserState({
+      name: updated.name,
+      email: updated.email,
+      programme: updated.programme,
+    });
+    toast.success("Profile updated");
+  }, []);
 
-  const toggleComplete = useCallback<MoladeState["toggleComplete"]>(
-    (id) => {
-      setTasks((prev) =>
-        prev.map((t) => {
-          if (t.id !== id) return t;
-          const done = t.status !== "completed";
-          return {
-            ...t,
-            status: done ? "completed" : "in_progress",
-            completedAt: done ? new Date().toISOString() : undefined,
-            completedOnTime: done ? new Date(t.deadline).getTime() > Date.now() : undefined,
-          };
-        }),
-      );
-      const t = tasks.find((x) => x.id === id);
-      if (t) {
-        const done = t.status !== "completed";
-        logActivity(done ? "completed" : "updated", `${done ? "Completed" : "Reopened"} ${t.title}`);
-        toast.success(done ? "Nice — one down." : "Task reopened", {
-          description: done ? `${t.title} marked complete.` : undefined,
-        });
-      }
-    },
-    [tasks, logActivity],
-  );
+  const changePassword = useCallback(async (currentPassword: string, newPassword: string) => {
+    await usersApi.updatePassword(currentPassword, newPassword);
+    toast.success("Password updated");
+  }, []);
 
-  const deleteTask = useCallback((id: string) => {
+  const addTask = useCallback<MoladeState["addTask"]>(async (t) => {
+    const task = await tasksApi.create({
+      title: t.title,
+      description: t.description,
+      course: t.course,
+      courseCode: t.courseCode,
+      deadline: t.deadline,
+      effort: t.effort,
+      status: t.status,
+      personalPreference: t.personalPreference,
+    });
+    setTasks((prev) => [task, ...prev]);
+    setActivity((prev) => [
+      {
+        id: `a-${Date.now()}`,
+        kind: "created",
+        text: `Added ${task.title}`,
+        at: new Date().toISOString(),
+      },
+      ...prev,
+    ]);
+    toast.success("Task created", {
+      description: `${task.title} has been ranked automatically.`,
+    });
+  }, []);
+
+  const updateTask = useCallback<MoladeState["updateTask"]>(async (id, patch) => {
+    const task = await tasksApi.update(id, patch);
+    setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+    toast.success("Task updated");
+  }, []);
+
+  const toggleComplete = useCallback<MoladeState["toggleComplete"]>(async (id) => {
+    const before = tasks.find((t) => t.id === id);
+    const task = await tasksApi.toggleComplete(id);
+    setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+    const done = task.status === "completed";
+    toast.success(done ? "Nice — one down." : "Task reopened", {
+      description: done && before ? `${before.title} marked complete.` : undefined,
+    });
+    activityApi.list().then(setActivity).catch(() => undefined);
+  }, [tasks]);
+
+  const deleteTask = useCallback(async (id: string) => {
+    await tasksApi.remove(id);
     setTasks((prev) => prev.filter((t) => t.id !== id));
     toast.success("Task deleted");
   }, []);
 
-  const snoozeTask = useCallback(
-    (id: string, hours: number) => {
-      const until = new Date(Date.now() + hours * 36e5).toISOString();
-      setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, snoozedUntil: until } : t)));
-      const t = tasks.find((x) => x.id === id);
-      logActivity("reminder", `Snoozed ${t?.title ?? "task"} for ${hours}h`);
-      toast.success(`Snoozed for ${hours}h`, {
-        description: t ? `${t.title} drops down the ranking until then.` : undefined,
-      });
-    },
-    [tasks, logActivity],
-  );
+  const snoozeTask = useCallback(async (id: string, hours: number) => {
+    const task = await tasksApi.snooze(id, hours);
+    setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
+    toast.success(`Snoozed for ${hours}h`, {
+      description: `${task.title} drops down the ranking until then.`,
+    });
+  }, []);
 
-  const unsnoozeTask = useCallback((id: string) => {
-    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, snoozedUntil: undefined } : t)));
+  const unsnoozeTask = useCallback(async (id: string) => {
+    const task = await tasksApi.unsnooze(id);
+    setTasks((prev) => prev.map((t) => (t.id === id ? task : t)));
     toast.success("Back in the ranking");
   }, []);
 
-  const recalculate = useCallback(() => {
+  const recalculate = useCallback(async () => {
     setRecalculating(true);
-    window.setTimeout(() => {
+    try {
+      await prioritiesApi.recalculate();
+      const next = await tasksApi.list();
+      setTasks(next);
+      setNow(Date.now());
       setRecalcKey((k) => k + 1);
-      setRecalculating(false);
       toast.success("Priorities recalculated", {
         description: "Ranking refreshed from deadlines, workload and status.",
       });
-    }, 650);
+    } finally {
+      setRecalculating(false);
+    }
+  }, []);
+
+  const markNotificationRead = useCallback(async (id: string) => {
+    const n = await notificationsApi.markRead(id);
+    setNotifications((prev) => prev.map((x) => (x.id === id ? n : x)));
+  }, []);
+
+  const markAllRead = useCallback(async () => {
+    await notificationsApi.markAllRead();
+    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
+  }, []);
+
+  const dismissNotification = useCallback(async (id: string) => {
+    const n = notifications.find((x) => x.id === id);
+    await notificationsApi.dismiss(id);
+    setNotifications((prev) => prev.filter((x) => x.id !== id));
+    toast.success("Reminder dismissed", { description: n?.title });
+  }, [notifications]);
+
+  const snoozeNotification = useCallback(
+    async (id: string, hours: number) => {
+      const n = await notificationsApi.snooze(id, hours);
+      setNotifications((prev) => prev.map((x) => (x.id === id ? n : x)));
+      const tasksNext = await tasksApi.list();
+      setTasks(tasksNext);
+      toast.success(`Snoozed for ${hours}h`);
+    },
+    [],
+  );
+
+  const restoreNotification = useCallback(async (id: string) => {
+    const n = await notificationsApi.restore(id);
+    setNotifications((prev) => prev.map((x) => (x.id === id ? n : x)));
+    const tasksNext = await tasksApi.list();
+    setTasks(tasksNext);
   }, []);
 
   const value: MoladeState = {
+    ready,
+    socketConnected,
     tasks,
     ranked,
     notifications,
@@ -213,40 +376,21 @@ export function MoladeProvider({ children }: { children: ReactNode }) {
     recalcKey,
     recalculating,
     user,
-    setPrefs: (p) => setPrefsState((prev) => ({ ...prev, ...p })),
-    setUser: (u) => setUserState((prev) => ({ ...prev, ...u })),
+    refresh,
+    logout,
+    setPrefs,
+    setUser,
+    changePassword,
     addTask,
     updateTask,
     toggleComplete,
     deleteTask,
     recalculate,
-    markNotificationRead: (id) =>
-      setNotifications((prev) => prev.map((n) => (n.id === id ? { ...n, read: true } : n))),
-    markAllRead: () => setNotifications((prev) => prev.map((n) => ({ ...n, read: true }))),
-    dismissNotification: (id) => {
-      const n = notifications.find((x) => x.id === id);
-      setNotifications((prev) => prev.filter((x) => x.id !== id));
-      toast.success("Reminder dismissed", { description: n?.title });
-    },
-    snoozeNotification: (id, hours) => {
-      const until = new Date(Date.now() + hours * 36e5).toISOString();
-      const n = notifications.find((x) => x.id === id);
-      setNotifications((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, snoozedUntil: until, read: true } : x)),
-      );
-      if (n?.taskId) snoozeTask(n.taskId, hours);
-      else
-        toast.success(`Snoozed for ${hours}h`, {
-          description: "It will come back when it is worth your attention.",
-        });
-    },
-    restoreNotification: (id) => {
-      const n = notifications.find((x) => x.id === id);
-      setNotifications((prev) =>
-        prev.map((x) => (x.id === id ? { ...x, snoozedUntil: undefined, read: false } : x)),
-      );
-      if (n?.taskId) unsnoozeTask(n.taskId);
-    },
+    markNotificationRead,
+    markAllRead,
+    dismissNotification,
+    snoozeNotification,
+    restoreNotification,
     snoozeTask,
     unsnoozeTask,
     reducedMotion,

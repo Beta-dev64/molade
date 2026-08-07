@@ -88,17 +88,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       {
         name: "description",
         content:
-          "Molade is an intelligent task manager for university students. It ranks coursework by deadline, workload and status, and explains every recommendation.",
+          "Molade ranks your university coursework by deadline, workload and status — with clear reasons for every recommendation.",
       },
       { name: "author", content: "Molade" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "Molade — Know what matters next" },
-      { name: "twitter:title", content: "Molade — Know what matters next" },
-      { property: "og:description", content: "Molade is an intelligent task manager for university students. It ranks coursework by deadline, workload and status, and explains every recommendation." },
-      { name: "twitter:description", content: "Molade is an intelligent task manager for university students. It ranks coursework by deadline, workload and status, and explains every recommendation." },
-      { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Oq5g8xlJS0Yp4xoXQl5VdN52HSk1/social-images/social-1785311878695-ChatGPT_Image_Jul_29,_2026,_08_38_21_AM.webp" },
-      { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/Oq5g8xlJS0Yp4xoXQl5VdN52HSk1/social-images/social-1785311878695-ChatGPT_Image_Jul_29,_2026,_08_38_21_AM.webp" },
     ],
     links: [
       { rel: "stylesheet", href: appCss },

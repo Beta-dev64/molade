@@ -85,8 +85,8 @@ export function AppShell() {
         <div className="min-w-0 flex-1">
           {/* Top bar */}
           <header className="sticky top-0 z-30 border-b border-border/70 bg-background/70 backdrop-blur-xl">
-            <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 py-3 sm:px-6">
-              <div className="flex items-center gap-2 lg:hidden">
+            <div className="flex w-full items-center gap-3 px-4 py-3 sm:px-6 lg:gap-4 lg:px-10">
+              <div className="flex shrink-0 items-center gap-2 lg:hidden">
                 <button
                   onClick={() => {
                     tapFeedback();
@@ -100,17 +100,17 @@ export function AppShell() {
                   {open ? <X className="size-4" aria-hidden="true" /> : <Menu className="size-4" aria-hidden="true" />}
                 </button>
               </div>
-              <div className="relative min-w-0 lg:max-w-md">
+              <div className="relative min-w-0 flex-1">
                 <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search tasks, modules…"
-                  className="h-9 pl-9"
+                  className="h-9 w-full pl-9"
                   aria-label="Search"
                 />
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 <Button size="sm" className="hidden sm:inline-flex" onClick={() => setCreating(true)}>
                   <Plus className="size-4" /> New task
                 </Button>
@@ -120,7 +120,11 @@ export function AppShell() {
                   aria-label="Profile"
                   className="grid size-9 place-items-center rounded-full border border-teal/40 bg-teal/12 text-xs font-bold text-teal"
                 >
-                  {user.name.split(" ").map((p) => p[0]).join("").slice(0, 2)}
+                  {user.name
+                    .split(" ")
+                    .map((p) => p[0])
+                    .join("")
+                    .slice(0, 2)}
                 </Link>
               </div>
             </div>

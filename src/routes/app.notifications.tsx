@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Bell, CheckCheck, Clock, RotateCcw } from "lucide-react";
+import { Bell, CheckCheck, Clock, RotateCcw, Radio, Zap } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -11,6 +12,7 @@ import {
   isNotificationActive,
   notificationTone,
 } from "@/components/molade/notifications-center";
+import { notificationsApi } from "@/lib/api/resources";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/app/notifications")({
@@ -28,8 +30,15 @@ export const Route = createFileRoute("/app/notifications")({
 const LEADS = ["24h", "12h", "3h"] as const;
 
 function Notifications() {
-  const { notifications, markAllRead, markNotificationRead, prefs, setPrefs, restoreNotification } =
-    useMolade();
+  const {
+    notifications,
+    markAllRead,
+    markNotificationRead,
+    prefs,
+    setPrefs,
+    restoreNotification,
+    socketConnected,
+  } = useMolade();
   const now = useNow();
   const active = notifications.filter((n) => isNotificationActive(n, now));
   const snoozed = notifications.filter((n) => !isNotificationActive(n, now));
@@ -44,12 +53,39 @@ function Notifications() {
             {unread ? `${unread} unread` : "You’re all caught up"} · Reminders follow your email
             timing preference.
           </p>
+          <p
+            className={cn(
+              "mt-2 inline-flex items-center gap-1.5 text-xs",
+              socketConnected ? "text-teal" : "text-muted-foreground",
+            )}
+          >
+            <Radio className="size-3.5" aria-hidden />
+            {socketConnected ? "Live updates connected" : "Connecting live updates…"}
+          </p>
         </div>
-        {unread > 0 && (
-          <Button variant="outline" className="border-border" onClick={markAllRead}>
-            <CheckCheck className="size-4" /> Mark all read
+        <div className="flex flex-wrap gap-2">
+          <Button
+            variant="outline"
+            className="border-border"
+            onClick={async () => {
+              try {
+                await notificationsApi.ping();
+                toast.success("Live ping sent", {
+                  description: "It should appear here via Socket.IO.",
+                });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Ping failed");
+              }
+            }}
+          >
+            <Zap className="size-4" /> Test live alert
           </Button>
-        )}
+          {unread > 0 && (
+            <Button variant="outline" className="border-border" onClick={markAllRead}>
+              <CheckCheck className="size-4" /> Mark all read
+            </Button>
+          )}
+        </div>
       </header>
 
       {active.length === 0 ? (
