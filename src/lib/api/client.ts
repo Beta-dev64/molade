@@ -1,7 +1,9 @@
 import { clearAccessToken, getAccessToken } from "./token";
 
+const PRODUCTION_API_URL = "https://molade-back.onrender.com";
+
 const API_URL = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, "") ||
-  "http://localhost:4000";
+  PRODUCTION_API_URL;
 
 export class ApiError extends Error {
   status: number;
