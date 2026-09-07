@@ -12,6 +12,7 @@
 2. Choose **Create an account**.  
 3. Enter your full name, university email and a password (at least 8 characters).  
 4. Submit the form.
+5. Enter the 6-character code from email, **or** if the deployment is in marker mode you may choose **Skip for now** and sign in with your password without verifying.
 
 ### 1.2 Verify your email
 
@@ -21,9 +22,11 @@
 
 Codes expire in **10 minutes**. Use **Resend** if needed (there is a short cooldown).
 
+On deployments with `AUTH_VERIFICATION_MODE=lax`, verification is optional: skip the OTP screen and sign in as usual.
+
 ### 1.3 Sign in later
 
-Use **Sign in** with your email and password. If your email is not verified yet, Molade will send you back to the verification screen.
+Use **Sign in** with your email and password. If your email is not verified yet and the server is in the default (strict) mode, Molade will send you back to the verification screen. In `lax` mode you can sign in without verifying.
 
 ---
 

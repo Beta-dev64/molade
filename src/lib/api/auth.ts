@@ -21,10 +21,16 @@ export async function login(email: string, password: string) {
 }
 
 export async function register(input: { name: string; email: string; password: string }) {
-  return api<{ requiresVerification: true; email: string; message: string }>(
-    "/api/auth/register",
-    { method: "POST", body: JSON.stringify(input) },
-  );
+  return api<{
+    requiresVerification: true;
+    verificationSkippable: boolean;
+    email: string;
+    message: string;
+  }>("/api/auth/register", { method: "POST", body: JSON.stringify(input) });
+}
+
+export async function fetchAuthConfig() {
+  return api<{ verificationMode: "lax" | ""; verificationSkippable: boolean }>("/api/auth/config");
 }
 
 export async function verifyEmail(email: string, code: string) {

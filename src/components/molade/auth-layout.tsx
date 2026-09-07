@@ -26,6 +26,7 @@ export function AuthLayout({
   fields,
   submitLabel,
   footer,
+  initialValues,
 }: {
   mode: "login" | "register";
   title: string;
@@ -33,9 +34,10 @@ export function AuthLayout({
   fields: AuthField[];
   submitLabel: string;
   footer: React.ReactNode;
+  initialValues?: Record<string, string>;
 }) {
   const navigate = useNavigate();
-  const [values, setValues] = useState<Record<string, string>>({});
+  const [values, setValues] = useState<Record<string, string>>(initialValues ?? {});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(false);
@@ -76,7 +78,9 @@ export function AuthLayout({
           password: values.password!,
         });
         toast.success("Account created", {
-          description: "Check your email for a verification code.",
+          description: result.verificationSkippable
+            ? "Enter the code we emailed, or skip and sign in."
+            : "Check your email for a verification code.",
         });
         navigate({
           to: "/verify-email",
