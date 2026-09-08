@@ -7,7 +7,7 @@ import { AuthShell } from "@/components/molade/auth-shell";
 import { MoladeOtpInput, formatOtpForApi } from "@/components/molade/otp-input";
 import { Button } from "@/components/ui/button";
 import { ApiError } from "@/lib/api/client";
-import { resendOtp, verifyEmail } from "@/lib/api/auth";
+import { fetchAuthConfig, resendOtp, verifyEmail } from "@/lib/api/auth";
 
 const searchSchema = z.object({
   email: z.string().email().optional().catch(undefined),
@@ -15,6 +15,13 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/verify-email")({
   validateSearch: searchSchema,
+  loader: async () => {
+    try {
+      return await fetchAuthConfig();
+    } catch {
+      return { verificationMode: "" as const, verificationSkippable: false };
+    }
+  },
   head: () => ({
     meta: [
       { title: "Verify email — Molade" },
@@ -27,6 +34,7 @@ export const Route = createFileRoute("/verify-email")({
 function VerifyEmailPage() {
   const navigate = useNavigate();
   const { email: emailFromSearch } = Route.useSearch();
+  const { verificationSkippable: skippable } = Route.useLoaderData();
   const [email] = useState(emailFromSearch ?? "");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
@@ -61,6 +69,11 @@ function VerifyEmailPage() {
     }
   }
 
+  function onSkip() {
+    toast.message("You can sign in without verifying for now");
+    navigate({ to: "/login", search: { email } });
+  }
+
   if (!email) {
     return (
       <AuthShell
@@ -91,6 +104,17 @@ function VerifyEmailPage() {
           Verify email
         </Button>
       </form>
+      {skippable && (
+        <Button
+          type="button"
+          variant="ghost"
+          size="lg"
+          className="mt-3 w-full rounded-full text-muted-foreground"
+          onClick={onSkip}
+        >
+          Skip for now
+        </Button>
+      )}
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3 text-sm text-muted-foreground">
         <button
           type="button"
@@ -100,12 +124,14 @@ function VerifyEmailPage() {
         >
           {resending ? "Sending…" : "Resend code"}
         </button>
-        <Link to="/login" className="hover:text-foreground">
+        <Link to="/login" search={{ email }} className="hover:text-foreground">
           Back to sign in
         </Link>
       </div>
       <p className="mt-8 text-xs text-muted-foreground">
-        Unverified accounts are removed automatically after 24 hours.
+        {skippable
+          ? "Verification is optional for now. You can sign in without the code."
+          : "Unverified accounts are removed automatically after 24 hours."}
       </p>
     </AuthShell>
   );

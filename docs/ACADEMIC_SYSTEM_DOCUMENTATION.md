@@ -131,7 +131,7 @@ Each factor contributes labelled **reasons** with weights and kinds (`deadline`,
 | Concern | Approach |
 |---------|----------|
 | Authentication | Email + password; bcrypt hashing; JWT access tokens |
-| Email verification | 6-character OTP (`XXX-XXX`), 10-minute TTL, attempt limits |
+| Email verification | 6-character OTP (`XXX-XXX`), 10-minute TTL, attempt limits. `AUTH_VERIFICATION_MODE=lax` makes OTP optional so markers can skip and still log in. |
 | Password reset | OTP then short-lived reset JWT |
 | Authorisation | Middleware attaches `req.user`; services always filter by `userId` |
 | Transport | HTTPS in production; CORS restricted to configured origins |
@@ -139,7 +139,7 @@ Each factor contributes labelled **reasons** with weights and kinds (`deadline`,
 | Realtime auth | Socket.IO handshake requires Bearer/JWT in `auth.token` |
 | Privacy | Export-my-data and delete-account endpoints; UK GDPR-oriented copy |
 
-Unverified accounts are purged after 24 hours by a scheduled job.
+Unverified accounts are purged after 24 hours by a scheduled job, unless `AUTH_VERIFICATION_MODE=lax`.
 
 ---
 
